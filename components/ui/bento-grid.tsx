@@ -110,7 +110,7 @@ function BentoCard({
             muted
             playsInline
             loop
-            preload="auto"
+            preload="metadata"
             className="absolute inset-0 h-full w-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-1000 scale-[1.15]"
             style={{ objectFit: 'cover' }}
           />

@@ -1,8 +1,15 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import ScrollExpandMedia from "@/components/ui/scroll-expansion-hero";
-import { LinkPreviewDemo } from "@/components/ui/link-preview-demo";
-import CaseStudiesSection from "@/components/ui/case-studies-section";
+
+const LinkPreviewDemo = dynamic(() => import("@/components/ui/link-preview-demo").then(mod => mod.LinkPreviewDemo), {
+  ssr: false,
+});
+
+const CaseStudiesSection = dynamic(() => import("@/components/ui/case-studies-section"), {
+  ssr: false,
+});
 
 export default function Page() {
   const sections = [

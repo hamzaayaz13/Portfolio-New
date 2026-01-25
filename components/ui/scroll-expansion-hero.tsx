@@ -101,6 +101,19 @@ const ScrollExpandMedia = ({
   }, [currentVideoIndex, videos]);
 
   useEffect(() => {
+    const handleForceExpand = () => {
+      setScrollProgress(1);
+      setMediaFullyExpanded(true);
+      setShowContent(true);
+    };
+
+    // Check for hash on load
+    if (typeof window !== 'undefined' && window.location.hash === '#work') {
+      handleForceExpand();
+    }
+
+    window.addEventListener('force-expand-hero', handleForceExpand);
+
     const handleWheel = (e: WheelEvent) => {
       if (mediaFullyExpanded && e.deltaY < 0 && window.scrollY <= 5) {
         setMediaFullyExpanded(false);
@@ -185,6 +198,7 @@ const ScrollExpandMedia = ({
     window.addEventListener('touchend', handleTouchEnd as EventListener);
 
     return () => {
+      window.removeEventListener('force-expand-hero', handleForceExpand);
       window.removeEventListener(
         'wheel',
         handleWheel as unknown as EventListener
@@ -299,7 +313,7 @@ const ScrollExpandMedia = ({
                         muted
                         loop={videos.length === 1}
                         playsInline
-                        preload='auto'
+                        preload='metadata'
                         className='w-full h-full object-cover rounded-xl'
                         controls={false}
                         disablePictureInPicture

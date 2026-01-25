@@ -543,19 +543,19 @@ export default function UnduitCaseStudy() {
                 transition={{ duration: 0.8 }}
               >
                 <h1 className="text-[32px] md:text-[40px] font-medium text-white mb-4">
-                  How I Helped Unduit
-                  <br />
+                How I Helped Unduit
+                <br />
                   <span className="text-2xl sm:text-4xl md:text-[5rem] font-medium mt-2 leading-none text-white">
-                    Cut Support Tickets with
-                  </span>
-                  <br />
+                  Cut Support Tickets with
+                </span>
+                <br />
                   <span className="text-2xl sm:text-4xl md:text-[5rem] font-bold leading-none bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                    Better UX
-                  </span>
-                </h1>
-                <p className="text-xl md:text-2xl text-gray-400 mt-6 max-w-3xl mx-auto">
-                  Redesigning Unduit&apos;s Refresh app to make device recovery and buy-back flows intuitive, guided, and error-free.
-                </p>
+                  Better UX
+                </span>
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-400 mt-6 max-w-3xl mx-auto">
+                Redesigning Unduit&apos;s Refresh app to make device recovery and buy-back flows intuitive, guided, and error-free.
+              </p>
               </motion.div>
             </div>
           }
@@ -566,6 +566,7 @@ export default function UnduitCaseStudy() {
             muted
             loop
             playsInline
+            preload="metadata"
             className="mx-auto rounded-2xl object-cover h-full w-full"
             draggable={false}
           />
@@ -596,7 +597,7 @@ export default function UnduitCaseStudy() {
               <div className="p-8 rounded-3xl bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 space-y-4">
                 <div className="h-10 w-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
                   <span className="text-purple-400 font-bold">01</span>
-                </div>
+        </div>
                 <h3 className="text-white font-bold text-xl tracking-tight">Project Overview</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
                   Redesign of Unduit&apos;s Refresh app, focusing on the core device recovery and buy-back flow for enterprise IT managers.
@@ -611,7 +612,7 @@ export default function UnduitCaseStudy() {
                 <h3 className="text-white font-bold text-xl tracking-tight">The Friction</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
                   Confusing setup flows and irrelevant UI elements led to avoidable technical mistakes and a high volume of support tickets.
-                </p>
+                  </p>
               </div>
 
               {/* Solution Card */}
@@ -679,11 +680,11 @@ export default function UnduitCaseStudy() {
                       <p className="text-gray-300">{point}</p>
                     </div>
                   ))}
-                </div>
-              </div>
-            </div>
           </div>
-        </section>
+        </div>
+            </div>
+        </div>
+      </section>
 
         {/* Research & Findings - Visual Cards */}
         <section className="scroll-mt-32">
@@ -692,7 +693,7 @@ export default function UnduitCaseStudy() {
             <p className="text-gray-400 text-lg">
               We combined stakeholder interviews with behavioral analytics to pinpoint exactly where the experience was breaking.
             </p>
-          </div>
+        </div>
           
           <div className="grid md:grid-cols-3 gap-8">
             {[
@@ -712,18 +713,18 @@ export default function UnduitCaseStudy() {
                 image: "/Images/new 3.png"
               }
             ].map((finding, i) => (
-              <motion.div 
+          <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
                 className="group relative flex flex-col p-8 rounded-3xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all overflow-hidden"
               >
                 <div className="relative aspect-video mb-8 rounded-xl overflow-hidden border border-white/10 group-hover:border-purple-500/30 transition-colors">
-                  <Image 
+                  <Image
                     src={finding.image} 
                     alt={finding.title} 
-                    fill 
+                    fill
                     className="object-contain p-2"
                   />
                 </div>
@@ -731,7 +732,7 @@ export default function UnduitCaseStudy() {
                 <p className="text-gray-400 text-sm leading-relaxed">{finding.desc}</p>
               </motion.div>
             ))}
-          </div>
+              </div>
         </section>
 
         {/* Process Section - THE TIMELINE */}
@@ -762,10 +763,10 @@ export default function UnduitCaseStudy() {
               <div>
                 <p className="text-4xl font-bold text-white">-45%</p>
                 <p className="text-gray-500 text-sm uppercase tracking-wider font-mono mt-1">Error Rate</p>
+                </div>
               </div>
             </div>
-          </div>
-          
+
           <div className="relative group">
             <div className="relative h-[400px] md:h-[600px] lg:h-[800px] w-full overflow-hidden rounded-[2.5rem] border border-white/10 bg-black shadow-2xl">
               <div className="absolute top-8 left-8 z-30 pointer-events-none">
@@ -773,7 +774,7 @@ export default function UnduitCaseStudy() {
               </div>
               <div className="absolute top-8 right-8 z-30 pointer-events-none text-right">
                 <span className="px-4 py-2 rounded-full bg-purple-500/20 backdrop-blur-md border border-purple-500/30 text-[10px] font-bold uppercase tracking-widest text-purple-300">After Redesign</span>
-              </div>
+        </div>
               
               <Compare
                 firstImage="/Images/Refresh Buy Step-1.png"
@@ -785,8 +786,8 @@ export default function UnduitCaseStudy() {
               />
             </div>
             <div className="absolute inset-0 rounded-[2.5rem] ring-1 ring-inset ring-white/10 pointer-events-none" />
-          </div>
-        </section>
+        </div>
+      </section>
 
         {/* Impact & Evolution */}
         <section className="scroll-mt-32">
@@ -833,8 +834,8 @@ export default function UnduitCaseStudy() {
                 "/Images/Dashboard-1.png"
               ]}
               className="bg-gray-900/50"
-            />
-          </div>
+              />
+            </div>
         </section>
 
         {/* Reflection */}
@@ -845,8 +846,8 @@ export default function UnduitCaseStudy() {
             <p className="text-gray-400 text-xl leading-relaxed">
               This project reinforced that <span className="text-white underline decoration-purple-500/50 underline-offset-4">UX writing is not an afterthought</span>—it is a core design tool. By aligning the system&apos;s language with the user&apos;s mental model, we eliminated more friction than any visual update could.
             </p>
-          </div>
-        </section>
+        </div>
+      </section>
 
         {/* Next Case Study CTA */}
         <section className="scroll-mt-32">
@@ -877,8 +878,8 @@ export default function UnduitCaseStudy() {
                 Back to Home
               </Link>
             </div>
-          </div>
-        </section>
+        </div>
+      </section>
       </main>
 
       {/* Bottom Floating Nav */}

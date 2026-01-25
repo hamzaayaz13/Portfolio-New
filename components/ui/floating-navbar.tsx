@@ -27,18 +27,25 @@ export const FloatingNav = ({
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, link: string) => {
     if (link === "#work") {
       e.preventDefault();
-      if (pathname === "/") {
-        const element = document.getElementById("work");
-        if (element) {
-          const offset = 100; // Offset for header or spacing
-          const elementPosition = element.getBoundingClientRect().top;
-          const offsetPosition = elementPosition + window.pageYOffset - offset;
+      
+      // Tell the hero to expand first
+      window.dispatchEvent(new CustomEvent('force-expand-hero'));
 
-          window.scrollTo({
-            top: offsetPosition,
-            behavior: "smooth"
-          });
-        }
+      if (pathname === "/") {
+        // Wait a tiny bit for the hero state to update
+        setTimeout(() => {
+          const element = document.getElementById("work");
+          if (element) {
+            const offset = 100; // Offset for header or spacing
+            const elementPosition = element.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: "smooth"
+            });
+          }
+        }, 100);
       } else {
         router.push("/#work");
       }
@@ -67,10 +74,15 @@ export const FloatingNav = ({
           <span className="text-sm cursor-pointer">{navItem.name}</span>
         </Link>
       ))}
-      <button className="border text-sm font-medium relative border-white/[0.2] text-white px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+      <a 
+        href="/Resume.pdf" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="border text-sm font-medium relative border-white/[0.2] text-white px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+      >
         <span>Resume</span>
         <span className="absolute inset-x-0 w-1/2 mx-auto -bottom-px bg-gradient-to-r from-transparent via-purple-500 to-transparent h-px" />
-      </button>
+      </a>
     </motion.div>
   );
 };

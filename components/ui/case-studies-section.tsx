@@ -1,9 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import BentoGrid from "./bento-grid";
-import RotatingGradientRight from "./rotating-gradient-right";
+import dynamic from "next/dynamic";
 import { CaseStudyModal } from "./case-study-modal";
+
+const BentoGrid = dynamic(() => import("./bento-grid"), {
+  loading: () => <div className="h-[500px] w-full animate-pulse bg-white/5 rounded-3xl" />,
+});
+
+const RotatingGradientRight = dynamic(() => import("./rotating-gradient-right"), {
+  loading: () => <div className="h-[720px] w-full animate-pulse bg-white/5 rounded-3xl" />,
+});
 
 type BentoItem = {
   id: string;
@@ -59,8 +66,8 @@ export default function CaseStudiesSection({
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div>
             <h2 className={titleClassName || "text-4xl sm:text-5xl font-bold tracking-tight mb-4"}>
-              {title}
-            </h2>
+            {title}
+          </h2>
             <p className="text-neutral-500 text-lg max-w-lg">
               A selection of projects where I solved complex problems through user research and design systems.
             </p>

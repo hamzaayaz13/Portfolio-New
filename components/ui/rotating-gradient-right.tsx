@@ -142,11 +142,12 @@ export default function RotatingGradientRight({
                 
                 {section.videoSrc ? (
                   <video
-                    src={section.videoSrc}
-                    autoPlay
+                    src={activeSection === index ? section.videoSrc : ""}
+                    autoPlay={activeSection === index}
                     loop
                     muted
                     playsInline
+                    preload="metadata"
                     className="absolute inset-0 h-full w-full object-cover scale-[1.05]"
                   />
                 ) : (
