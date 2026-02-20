@@ -34,7 +34,7 @@ export default function ContactPage() {
               {/* Photo */}
               <figure>
                 <div className="relative aspect-[4/5] rounded-lg overflow-hidden visual-shadow max-w-[400px]">
-                  <Image src="/Images/carforce/own picture.jpeg" alt="Hamza Ayaz" fill className="object-cover" />
+                  <Image src="/Images/carforce/own-picture.jpeg" alt="Hamza Ayaz" fill className="object-cover" />
                 </div>
               </figure>
 
