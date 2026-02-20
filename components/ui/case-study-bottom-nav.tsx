@@ -20,45 +20,33 @@ export const CaseStudyBottomNav = ({
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 1, duration: 0.8 }}
-        className="flex items-center gap-1 md:gap-2 p-1 md:p-2 rounded-full bg-black/60 backdrop-blur-2xl border border-white/10 shadow-2xl pointer-events-auto max-w-full"
+        className="flex items-center gap-1.5 md:gap-3 p-1.5 md:p-2 rounded-full bg-black/60 backdrop-blur-2xl border border-white/10 shadow-2xl pointer-events-auto max-w-[95vw] overflow-hidden"
       >
         <Link
-          href="mailto:contact@hamzaayaz.com"
-          className="px-3 md:px-6 py-2.5 md:py-3 rounded-full text-[10px] sm:text-xs md:text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap shrink-0"
+          href="mailto:hamzaayaz53@gmail.com"
+          className="px-3 md:px-6 py-2.5 md:py-3 rounded-full text-[10px] sm:text-xs md:text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap"
         >
-          Contact Me
+          Email Me
         </Link>
         <div className="w-px h-4 bg-white/10 shrink-0" />
         <Link
           href="/"
-          className="flex items-center gap-1 sm:gap-2 px-3 md:px-6 py-2.5 md:py-3 rounded-full text-[10px] sm:text-xs md:text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap shrink-0"
+          className="flex items-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 rounded-full text-[10px] sm:text-xs md:text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all whitespace-nowrap"
         >
-          <ArrowLeft className="w-3 h-3 md:w-4 md:h-4 shrink-0" />
-          <span className="hidden xs:inline">Exit Case Study</span>
-          <span className="xs:hidden">Exit</span>
+          <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
+          <span className="hidden xs:inline">Back Home</span>
+          <span className="xs:hidden">Home</span>
         </Link>
         <div className="w-px h-4 bg-white/10 shrink-0" />
         <Link
           href={nextCaseStudyLink}
-          className="flex items-center gap-1 sm:gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-full bg-white text-black text-[10px] sm:text-xs md:text-sm font-bold hover:bg-purple-500 hover:text-white transition-all whitespace-nowrap shadow-lg shrink-0"
+          className="flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-full bg-white text-black text-[10px] sm:text-xs md:text-sm font-bold hover:bg-purple-500 hover:text-white transition-all whitespace-nowrap shadow-lg"
         >
-          {nextCaseStudyName === "Next Case Study" ? (
-            <>
-              <span className="hidden xs:inline">Next Case Study</span>
-              <span className="xs:hidden">Next</span>
-            </>
-          ) : nextCaseStudyName === "Previous Case Study" ? (
-            <>
-              <span className="hidden xs:inline">Previous Case Study</span>
-              <span className="xs:hidden">Prev</span>
-            </>
-          ) : (
-            nextCaseStudyName
-          )}
-          <ArrowLeft className="w-3 h-3 md:w-4 md:h-4 rotate-180 shrink-0" />
+          <span className="hidden xs:inline">{nextCaseStudyName}</span>
+          <span className="xs:hidden">Next</span>
+          <ArrowLeft className="w-3 h-3 md:w-4 md:h-4 rotate-180" />
         </Link>
       </motion.div>
     </div>
   );
 };
-

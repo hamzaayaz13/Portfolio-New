@@ -1,84 +1,81 @@
 "use client";
 
-import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
+
+const fadeIn = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.4, 0.25, 1] } }
+};
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-[#0b0f12] text-white selection:bg-purple-500/30 pt-40 pb-20 px-8">
-      <main className="max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-16 lg:gap-24 items-center">
-          
-          {/* LEFT COLUMN — TEXT (60%) */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="space-y-12"
-          >
-            <div className="space-y-4">
-              <span className="text-[12px] uppercase tracking-[0.3em] text-white/50 font-bold block">
-                Product Designer
-              </span>
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white">
-                Hamza Ayaz
-              </h1>
-            </div>
-
-            <div className="space-y-8 max-w-[54ch]">
-              <p className="text-lg md:text-xl text-white/90 leading-relaxed font-medium">
-                I started in fashion marketing, learning how people notice, desire, and emotionally connect with products. That perspective led me into product design — where clarity, structure, and real user behavior matter more than surface-level aesthetics.
-              </p>
-              <p className="text-base md:text-lg text-white/60 leading-relaxed font-medium">
-                Today, I design large-scale marketplace and consumer products at Dubizzle Group, focusing on reducing friction, making decisions obvious, and building experiences that quietly earn trust.
-              </p>
-            </div>
-
-            {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-8 pt-4">
-              <a
-                href="mailto:hamzaayaz53@gmail.com"
-                className="px-10 py-4 rounded-full bg-white text-black font-bold text-base hover:bg-purple-500 hover:text-white transition-all duration-500 shadow-xl active:scale-95"
-                onClick={(e) => {
-                  window.location.href = "mailto:hamzaayaz53@gmail.com";
-                }}
-              >
-                Email me
-              </a>
-              <a
-                href="https://www.linkedin.com/in/muhammadhamzaayaz/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/60 hover:text-white font-bold text-base transition-colors underline-offset-8 hover:underline"
-              >
-                View LinkedIn
-              </a>
-            </div>
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
+      
+      {/* HERO */}
+      <section className="pt-[var(--space-xxl)] pb-[var(--space-xl)]">
+        <div className="container-main">
+          <motion.div initial="hidden" animate="visible" variants={fadeIn} className="max-w-[640px]">
+            <small className="label block mb-[var(--space-xxs)]">Contact</small>
+            <h1 className="h1 mb-[var(--space-xs)]">Let&apos;s connect.</h1>
+            <p className="body-text text-[19px]">
+              Have a project in mind or want to discuss design?
+            </p>
           </motion.div>
-
-          {/* RIGHT COLUMN — IMAGE (40%) */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative aspect-[4/5] lg:aspect-[3/4] rounded-[40px] overflow-hidden bg-white/[0.02] border border-white/5 shadow-2xl"
-          >
-            <Image
-              src="/Images/carforce/own-picture.jpeg"
-              alt="Hamza Ayaz"
-              fill
-              className="object-cover"
-              priority
-            />
-            {/* Subtle Overlay for Depth */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-transparent pointer-events-none" />
-          </motion.div>
-
         </div>
-      </main>
+      </section>
+
+      {/* MAIN */}
+      <section className="section-gap bg-[var(--muted-bg)]">
+        <div className="container-main">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn}>
+            <div className="grid md:grid-cols-2 gap-[var(--space-l)] items-start">
+              {/* Photo */}
+              <figure>
+                <div className="relative aspect-[4/5] rounded-lg overflow-hidden visual-shadow max-w-[400px]">
+                  <Image src="/Images/carforce/own picture.jpeg" alt="Hamza Ayaz" fill className="object-cover" />
+                </div>
+              </figure>
+
+              {/* Content */}
+              <div className="max-w-[400px]">
+                <small className="label block mb-[var(--space-xxs)]">About</small>
+                <h2 className="h2 mb-[var(--space-xs)]">Hamza Ayaz</h2>
+                <p className="body-text mb-[var(--space-s)]">
+                  Product Designer at Dubizzle Group with experience across B2C, B2B, and enterprise SaaS. I focus on reducing friction and building experiences that earn trust.
+                </p>
+                <p className="body-text text-[15px] mb-[var(--space-l)]">
+                  Based in Dubai. Available for remote and on-site.
+                </p>
+
+                {/* Links */}
+                <div className="space-y-[var(--space-xs)]">
+                  <a href="mailto:hamzaayaz53@gmail.com" className="block p-[var(--space-s)] rounded border border-[var(--subtle)] hover:border-[var(--muted-text)] transition-colors">
+                    <p className="text-[15px] font-medium">Email</p>
+                    <p className="text-[14px] text-[var(--muted-text)]">hamzaayaz53@gmail.com</p>
+                  </a>
+                  <a href="https://www.linkedin.com/in/muhammadhamzaayaz/" target="_blank" rel="noopener noreferrer" className="block p-[var(--space-s)] rounded border border-[var(--subtle)] hover:border-[var(--muted-text)] transition-colors">
+                    <p className="text-[15px] font-medium">LinkedIn</p>
+                    <p className="text-[14px] text-[var(--muted-text)]">Connect with me</p>
+                  </a>
+                  <a href="/resume new dubai.pdf" target="_blank" rel="noopener noreferrer" className="block p-[var(--space-s)] rounded border border-[var(--subtle)] hover:border-[var(--muted-text)] transition-colors">
+                    <p className="text-[15px] font-medium">Resume</p>
+                    <p className="text-[14px] text-[var(--muted-text)]">Download PDF</p>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* NAV */}
+      <nav className="py-[var(--space-m)] border-t border-[var(--subtle)]">
+        <div className="container-main">
+          <Link href="/" className="text-[15px] text-[var(--accent)] hover:underline">← Home</Link>
+        </div>
+      </nav>
     </div>
   );
 }
-
-

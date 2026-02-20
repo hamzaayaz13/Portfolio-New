@@ -2,66 +2,131 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-  }
+:root {
+  /* spacing (px) based on 16px root (1rem = 16px) */
+  --space-xxs: 8px;   /* 0.5rem */
+  --space-xs: 16px;   /* 1rem */
+  --space-s: 24px;    /* 1.5rem */
+  --space-m: 32px;    /* 2rem */
+  --space-l: 48px;    /* 3rem */
+  --space-xl: 96px;   /* 6rem */
+  --space-xxl: 120px; /* 7.5rem */
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
+  /* container widths */
+  --container-max: 1040px;
+  --site-max: 1280px;
+
+  /* typography */
+  --font-family: "Inter", "SF Pro Text", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-size-base: 16px;
+  --line-height-body: 1.65;
+
+  /* type scale (desktop) */
+  --h1: 48px;
+  --h2: 28px;
+  --label: 14px;
+  --body: 17px;
+
+  /* colors */
+  --bg: #ffffff;
+  --muted-bg: #f6f7f8;
+  --text: #0b0b0b;
+  --muted-text: #6b6b6b;
+  --accent: #1976d2;
+  --subtle: rgba(11, 11, 11, 0.06);
 }
 
 @layer base {
   * {
-    @apply border-border;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-body);
+    color: var(--text);
+    background-color: var(--bg);
+  }
+
+  h1, h2, h3 {
+    color: var(--text);
+  }
+
+  p {
+    color: var(--muted-text);
+    max-width: 64ch;
   }
 }
 
 @layer utilities {
-  .transform-3d {
-    transform-style: preserve-3d;
+  .container-main {
+    max-width: var(--container-max);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--space-s);
+    padding-right: var(--space-s);
+  }
+
+  .section-gap {
+    padding-top: var(--space-xl);
+    padding-bottom: var(--space-xl);
+  }
+
+  .h1 {
+    font-size: var(--h1);
+    font-weight: 600;
+    line-height: 1.05;
+    margin-bottom: var(--space-xs);
+  }
+
+  .h2 {
+    font-size: var(--h2);
+    font-weight: 600;
+    line-height: 1.08;
+  }
+
+  .label {
+    font-size: var(--label);
+    color: var(--accent);
+  }
+
+  .body-text {
+    font-size: var(--body);
+    line-height: var(--line-height-body);
+    color: var(--muted-text);
+  }
+
+  .visual-shadow {
+    box-shadow: 0 24px 40px rgba(11, 11, 11, 0.06);
+  }
+
+  /* Scrollbar hide for carousels */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .h1 { font-size: 28px; }
+    .h2 { font-size: 22px; }
+    .body-text { font-size: 15px; }
+    .container-main { padding-left: 16px; padding-right: 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
-
-

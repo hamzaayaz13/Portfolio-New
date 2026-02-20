@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { FloatingNav } from "@/components/ui/floating-navbar";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "Portfolio - Scroll Expansion Hero",
-  description: "Modern portfolio with scroll expansion hero component",
+  title: "Hamza Ayaz — Product Designer",
+  description: "Product & UX Designer focused on clarity, systems, and reducing complexity in real products.",
 };
 
 export default function RootLayout({
@@ -18,23 +15,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const navItems = [
-    {
-      name: "Home",
-      link: "/",
-    },
-    {
-      name: "Case Study",
-      link: "#work",
-    },
-    {
-      name: "Contact Me",
-      link: "/contact",
-    },
+    { name: "Home", link: "/" },
+    { name: "Work", link: "#work" },
+    { name: "Contact", link: "/contact" },
   ];
 
   return (
-    <html lang="en" className="dark">
-      <body className={inter.className}>
+    <html lang="en">
+      <body>
         <FloatingNav navItems={navItems} />
         {children}
         <Analytics />
@@ -43,5 +31,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
