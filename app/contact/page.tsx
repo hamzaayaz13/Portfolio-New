@@ -61,7 +61,7 @@ export default function ContactPage() {
                   </a>
                   <a href="/resume new dubai.pdf" target="_blank" rel="noopener noreferrer" className="block p-[var(--space-s)] rounded border border-[var(--subtle)] hover:border-[var(--muted-text)] transition-colors">
                     <p className="text-[15px] font-medium">Resume</p>
-                    <p className="text-[14px] text-[var(--muted-text)]">Download PDF</p>
+                    <p className="text-[14px] text-[var(--muted-text)]">View PDF</p>
                   </a>
                 </div>
               </div>

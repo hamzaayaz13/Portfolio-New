@@ -117,9 +117,9 @@ export default function Page() {
 
       {/* Hero section - appears as intro leaves */}
       <section className="min-h-[100svh] flex flex-col justify-center relative">
-        <div className="container-main py-20">
+        <div className="container-main py-12 md:py-20">
           <p
-            className="text-[13px] text-[var(--muted-text)] uppercase tracking-[0.15em] mb-8 transition-all duration-700"
+            className="text-[13px] text-[var(--muted-text)] uppercase tracking-[0.15em] mb-4 md:mb-8 transition-all duration-700"
             style={{
               opacity: showIntro ? 0 : 1,
               transform: showIntro ? 'translateY(20px)' : 'translateY(0)',
@@ -131,7 +131,7 @@ export default function Page() {
           </p>
 
           <div
-            className="flex flex-wrap gap-x-1 gap-y-2 mb-12 transition-all duration-700"
+            className="flex flex-wrap gap-x-1 gap-y-2 mb-6 md:mb-12 transition-all duration-700"
             style={{
               opacity: showIntro ? 0 : 1,
               transform: showIntro ? 'translateY(20px)' : 'translateY(0)',
@@ -165,7 +165,7 @@ export default function Page() {
           </div>
 
           <div
-            className="relative h-[280px] md:h-[260px] lg:h-[220px] transition-all duration-700"
+            className="relative h-[160px] md:h-[180px] lg:h-[180px] transition-all duration-700"
             style={{
               opacity: showIntro ? 0 : 1,
               transform: showIntro ? 'translateY(20px)' : 'translateY(0)',
@@ -176,7 +176,7 @@ export default function Page() {
             {AUDIENCES.map((audience) => (
               <h1
                 key={audience.id}
-                className={`absolute top-0 left-0 right-0 text-[32px] md:text-[48px] lg:text-[56px] font-semibold leading-[1.15] tracking-[-0.02em] max-w-[880px] transition-opacity duration-150 ${
+                className={`absolute top-0 left-0 right-0 text-[24px] md:text-[42px] lg:text-[52px] font-semibold leading-[1.2] md:leading-[1.15] tracking-[-0.02em] max-w-[880px] transition-opacity duration-150 ${
                   activeAudience === audience.id ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                 }`}
               >
@@ -192,7 +192,7 @@ export default function Page() {
           </div>
 
           <div
-            className="mt-12 transition-all duration-700"
+            className="mt-6 md:mt-12 transition-all duration-700"
             style={{
               opacity: showIntro ? 0 : 1,
               transform: showIntro ? 'translateY(15px)' : 'translateY(0)',
@@ -250,8 +250,8 @@ export default function Page() {
           </motion.div>
         </div>
 
-        <div ref={carouselRef} className="overflow-x-auto scrollbar-hide">
-          <div className="flex gap-5 px-[max(24px,calc((100vw-var(--container-max))/2+24px))]">
+        <div ref={carouselRef} className="overflow-x-auto overflow-y-hidden scrollbar-hide">
+          <div className="flex gap-5 px-[max(24px,calc((100vw-var(--container-max))/2+24px))] pb-2">
             {CASE_STUDIES.map((study, index) => (
               <Link 
                 key={study.id} 
