@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+
+let hasShownHomeIntroThisVisit = false;
 
 const AUDIENCES = [
   {
@@ -73,14 +75,16 @@ const CASE_STUDIES = [
 export default function Page() {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [activeAudience, setActiveAudience] = useState("anyone");
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(!hasShownHomeIntroThisVisit);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (!showIntro) return;
+    const timer = window.setTimeout(() => {
       setShowIntro(false);
+      hasShownHomeIntroThisVisit = true;
     }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
+    return () => window.clearTimeout(timer);
+  }, [showIntro]);
 
   const scroll = (direction: "left" | "right") => {
     if (!carouselRef.current) return;
@@ -92,6 +96,10 @@ export default function Page() {
   };
 
   const scrollToWork = () => {
+    if (typeof window !== "undefined" && window.location.hash !== "#work") {
+      window.history.pushState(null, "", "/#work");
+      window.dispatchEvent(new Event("hashchange"));
+    }
     const element = document.getElementById("work");
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
@@ -99,15 +107,27 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] relative">
+      <a
+        href="https://cursor.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${showIntro ? "hero-reveal hero-reveal-5" : "hero-reveal-now"} fixed bottom-6 left-6 z-40 inline-flex items-center gap-1.5 rounded-full border border-[var(--subtle)] bg-[var(--bg)]/90 backdrop-blur-sm px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--muted-text)] hover:text-[var(--text)] hover:border-[var(--muted-text)] transition-colors shadow-sm`}
+      >
+        <span className="text-[var(--accent)]" aria-hidden>
+          ✦
+        </span>
+        Vibecoded on Cursor
+      </a>
+
       {/* Intro overlay - stays in DOM, animates with CSS */}
       <div
         className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg)] transition-all duration-700"
         style={{
           opacity: showIntro ? 1 : 0,
-          transform: showIntro ? 'translateY(0)' : 'translateY(-30px)',
-          pointerEvents: showIntro ? 'auto' : 'none',
-          transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+          transform: showIntro ? "translateY(0)" : "translateY(-30px)",
+          pointerEvents: showIntro ? "auto" : "none",
+          transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
         <h1 className="text-[28px] md:text-[36px] lg:text-[42px] font-semibold text-center">
@@ -117,33 +137,21 @@ export default function Page() {
 
       {/* Hero section - appears as intro leaves */}
       <section className="min-h-[100svh] flex flex-col justify-center relative">
-        <div className="container-main py-12 md:py-20">
+        <div className="container-main py-12 md:py-20 flex flex-col items-stretch w-full min-w-0 text-left">
           <p
-            className="text-[13px] text-[var(--muted-text)] uppercase tracking-[0.15em] mb-4 md:mb-8 transition-all duration-700"
-            style={{
-              opacity: showIntro ? 0 : 1,
-              transform: showIntro ? 'translateY(20px)' : 'translateY(0)',
-              transitionDelay: '0.05s',
-              transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
+            className={`${showIntro ? "hero-reveal hero-reveal-1" : "hero-reveal-now"} text-[13px] text-[var(--muted-text)] uppercase tracking-[0.15em] mb-4 md:mb-8 text-left`}
           >
             Product Designer
           </p>
 
           <div
-            className="flex flex-wrap gap-x-1 gap-y-2 mb-6 md:mb-12 transition-all duration-700"
-            style={{
-              opacity: showIntro ? 0 : 1,
-              transform: showIntro ? 'translateY(20px)' : 'translateY(0)',
-              transitionDelay: '0.1s',
-              transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
+            className={`${showIntro ? "hero-reveal hero-reveal-2" : "hero-reveal-now"} flex flex-wrap gap-x-1 gap-y-2 mb-6 md:mb-8 w-full min-w-0`}
           >
             {AUDIENCES.map((audience, index) => (
               <button
                 key={audience.id}
                 onClick={() => setActiveAudience(audience.id)}
-                className="relative px-3 py-2 text-[14px] transition-colors duration-150 group"
+                className="relative pl-[1px] pr-3 py-2 text-[14px] transition-colors duration-150 group"
               >
                 <span className={`transition-colors duration-150 ${
                   activeAudience === audience.id
@@ -153,7 +161,7 @@ export default function Page() {
                   {audience.label}
                 </span>
                 <span 
-                  className={`absolute bottom-0 left-3 right-3 h-[2px] bg-[var(--text)] transition-transform duration-200 origin-left ${
+                  className={`absolute bottom-0 left-[1px] right-3 h-[2px] bg-[var(--text)] transition-transform duration-200 origin-left ${
                     activeAudience === audience.id ? "scale-x-100" : "scale-x-0"
                   }`}
                 />
@@ -165,24 +173,30 @@ export default function Page() {
           </div>
 
           <div
-            className="relative h-[160px] md:h-[180px] lg:h-[180px] transition-all duration-700"
-            style={{
-              opacity: showIntro ? 0 : 1,
-              transform: showIntro ? 'translateY(20px)' : 'translateY(0)',
-              transitionDelay: '0.15s',
-              transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
+            className={`${showIntro ? "hero-reveal hero-reveal-3" : "hero-reveal-now"} relative w-full ${
+              activeAudience === "engineers"
+                ? "min-h-[400px] sm:min-h-[340px] md:min-h-[300px] lg:min-h-[280px]"
+                : "min-h-[200px] md:min-h-[220px] lg:min-h-[220px]"
+            }`}
           >
             {AUDIENCES.map((audience) => (
               <h1
                 key={audience.id}
-                className={`absolute top-0 left-0 right-0 text-[24px] md:text-[42px] lg:text-[52px] font-semibold leading-[1.2] md:leading-[1.15] tracking-[-0.02em] max-w-[880px] transition-opacity duration-150 ${
+                className={`absolute top-0 left-0 right-0 text-left text-[24px] md:text-[42px] lg:text-[52px] font-semibold leading-[1.2] md:leading-[1.15] tracking-[-0.02em] max-w-[880px] transition-opacity duration-150 ${
                   activeAudience === audience.id ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                 }`}
               >
                 {audience.id === "engineers" ? (
                   <>
-                    I&apos;m <code className="font-mono bg-[#1a1a1a] text-[#22c55e] px-2 py-1 rounded-md text-[0.85em]">deeply_technical</code> — and while I&apos;m not an engineer, I understand the landscape well enough to <code className="font-mono bg-[#1a1a1a] text-[#60a5fa] px-2 py-1 rounded-md text-[0.85em]">collaborate()</code> and contribute meaningfully.
+                    I&apos;m{" "}
+                    <code className="font-mono whitespace-nowrap bg-[#1a1a1a] text-[#22c55e] px-2 py-1 rounded-md text-[0.85em] align-baseline">
+                      deeply_technical
+                    </code>{" "}
+                    — and while I&apos;m not an engineer, I understand the landscape well enough to{" "}
+                    <code className="font-mono whitespace-nowrap bg-[#1a1a1a] text-[#60a5fa] px-2 py-1 rounded-md text-[0.85em] align-baseline">
+                      collaborate()
+                    </code>{" "}
+                    and contribute meaningfully.
                   </>
                 ) : (
                   audience.heading
@@ -192,17 +206,11 @@ export default function Page() {
           </div>
 
           <div
-            className="mt-6 md:mt-12 transition-all duration-700"
-            style={{
-              opacity: showIntro ? 0 : 1,
-              transform: showIntro ? 'translateY(15px)' : 'translateY(0)',
-              transitionDelay: '0.2s',
-              transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
+            className={`${showIntro ? "hero-reveal hero-reveal-4" : "hero-reveal-now"} mt-6 md:mt-10 w-full flex justify-start`}
           >
-            <Link 
-              href="/contact" 
-              className="inline-flex items-center gap-2 text-[15px] text-[var(--muted-text)] hover:text-[var(--text)] transition-colors"
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-2 text-left text-[15px] text-[var(--muted-text)] hover:text-[var(--text)] transition-colors shrink-0 whitespace-nowrap"
             >
               <span>Get in touch</span>
               <span className="text-[var(--accent)]">→</span>
@@ -212,12 +220,7 @@ export default function Page() {
 
         <button
           onClick={scrollToWork}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[var(--muted-text)] hover:text-[var(--text)] cursor-pointer transition-all duration-700"
-          style={{
-            opacity: showIntro ? 0 : 1,
-            transitionDelay: '0.25s',
-            transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
+          className={`${showIntro ? "hero-reveal hero-reveal-5" : "hero-reveal-now"} absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[var(--muted-text)] hover:text-[var(--text)] cursor-pointer`}
           aria-label="Scroll to work"
         >
           <span className="text-[12px] uppercase tracking-widest">Work</span>
@@ -339,7 +342,7 @@ export default function Page() {
       <footer className="py-[var(--space-m)] border-t border-[var(--subtle)]">
         <div className="container-main">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[13px] text-[var(--muted-text)]">
-            <p>© 2024 Hamza Ayaz</p>
+            <p>© 2026 Hamza Ayaz</p>
             <div className="flex gap-[var(--space-m)]">
               <a href="https://www.linkedin.com/in/muhammadhamzaayaz/" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--text)] transition-colors">LinkedIn</a>
               <a href="mailto:hamzaayaz53@gmail.com" className="hover:text-[var(--text)] transition-colors">Email</a>
