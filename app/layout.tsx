@@ -5,7 +5,7 @@ import { FloatingNav } from "@/components/ui/floating-navbar";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-const clarityProjectId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
+const clarityProjectId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID ?? "wgowleack8";
 
 export const metadata: Metadata = {
   title: "Hamza Ayaz — Product Designer",
