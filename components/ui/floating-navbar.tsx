@@ -107,7 +107,7 @@ export const FloatingNav = ({
         </Link>
       ))}
       <a 
-        href="/resume new dubai.pdf" 
+        href="/Resume/Hamza%20Ayaz%20-%20CV(R)%20.pdf" 
         target="_blank" 
         rel="noopener noreferrer"
         className="ml-0.5 px-4 py-2 rounded-full text-[14px] font-medium border border-[var(--text)] text-[var(--text)] hover:bg-[var(--text)] hover:text-white transition-colors"

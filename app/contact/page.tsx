@@ -59,7 +59,7 @@ export default function ContactPage() {
                     <p className="text-[15px] font-medium">LinkedIn</p>
                     <p className="text-[14px] text-[var(--muted-text)]">Connect with me</p>
                   </a>
-                  <a href="/resume new dubai.pdf" target="_blank" rel="noopener noreferrer" className="block p-[var(--space-s)] rounded border border-[var(--subtle)] hover:border-[var(--muted-text)] transition-colors">
+                  <a href="/Resume/Hamza%20Ayaz%20-%20CV(R)%20.pdf" target="_blank" rel="noopener noreferrer" className="block p-[var(--space-s)] rounded border border-[var(--subtle)] hover:border-[var(--muted-text)] transition-colors">
                     <p className="text-[15px] font-medium">Resume</p>
                     <p className="text-[14px] text-[var(--muted-text)]">View PDF</p>
                   </a>
