@@ -97,6 +97,7 @@ const DESIGN_COMPARISONS = [
       'Removed the comparison panel that added unnecessary visual noise to the interface',
       'Replaced dropdown wallet selector with visible card-based selection — users typically have 1-5 wallets, making a dropdown unnecessarily cumbersome',
       'Added "Add New Wallet" option directly in the flow — previously users had to navigate away to the wallet page, create a wallet, and return',
+      'The steps component replaced the comparison table in the same visual area to match existing user scanning behavior and make the new guided flow feel natural for both existing and new users.',
       'Reduced visual load by removing redundant copy that cluttered the page',
     ],
   },
@@ -123,6 +124,33 @@ const SCREENS = [
   { title: 'Custom fields', caption: 'Capture exactly the data you need — nothing more, nothing less.', src: '/Images/Dashboard-2.png', alt: 'Form builder with drag and drop fields' },
   { title: 'Employee actions', caption: 'Define what happens next — keep, recycle, or return.', src: '/Images/Dashboard-3.png', alt: 'Employee action options configuration' },
   { title: 'Device types', caption: 'Laptops, phones, tablets — specify what gets recovered.', src: '/Images/Dashboard-4.png', alt: 'Device type selection screen' },
+];
+
+const RESEARCH_INSIGHTS = [
+  {
+    number: '01',
+    title: 'Users Were Guessing Their Way Through',
+    description:
+      'Step 3 and 4 created the most friction. Users paused, reread labels, and guessed what to do next.',
+    image: '/Images/research-insight/users-guessing.png',
+    alt: 'Illustration of a confused user looking at custom fields and form controls',
+  },
+  {
+    number: '02',
+    title: 'Extra Content Became a Distraction',
+    description:
+      'The comparison table pulled attention away from setup, adding cognitive load instead of helping decisions.',
+    image: '/Images/research-insight/extra-content-distraction.png',
+    alt: 'Illustration of a user comparing options in a table',
+  },
+  {
+    number: '03',
+    title: 'Too Many Clicks for Simple Actions',
+    description:
+      'Users kept moving back and forth to recheck choices, creating unnecessary effort and confusion.',
+    image: '/Images/research-insight/too-many-clicks.png',
+    alt: 'Illustration of a frustrated user with repeated questions and backtracking',
+  },
 ];
 
 export default function UnduitCaseStudy() {
@@ -233,14 +261,55 @@ export default function UnduitCaseStudy() {
         </div>
       </section>
 
-      {/* INSIGHT */}
+      {/* RESEARCH & INSIGHT */}
       <section className="py-24 md:py-32">
         <div className="container-main">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={fadeIn} className="max-w-[900px]">
-            <p className="text-[14px] text-[var(--accent)] uppercase tracking-wider mb-6">Insight</p>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={fadeIn} className="w-full mb-14 md:mb-20">
+            <p className="text-[14px] text-[var(--accent)] uppercase tracking-wider mb-6">Research & Insight</p>
             <h2 className="text-[32px] md:text-[42px] lg:text-[52px] font-semibold leading-[1.1] tracking-[-0.02em] mb-8">
-              The issue wasn&apos;t complexity — it was lack of direction.
+              Understanding why users struggled during setup.
             </h2>
+            <p className="text-[18px] md:text-[21px] text-[var(--muted-text)] leading-relaxed mb-6 max-w-none">
+              To understand why users struggled during setup, I conducted usability testing sessions with first-time users from the target audience, including IT and HR managers.
+            </p>
+            <p className="text-[18px] md:text-[21px] text-[var(--muted-text)] leading-relaxed mb-6 max-w-none">
+              The sessions focused on observing how users navigated the flow independently, where they hesitated, and what created friction during the setup process. Since the company was actively investing in growth and marketing, the onboarding experience needed to feel intuitive and self-guided for completely new users entering the platform.
+            </p>
+            <p className="text-[18px] md:text-[21px] text-[var(--muted-text)] leading-relaxed max-w-none">
+              Alongside usability testing, session recordings were analyzed through PostHog to identify repeated patterns, confusion points, and behavioral drop-offs across the flow.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            variants={staggerContainer}
+            className="grid md:grid-cols-3 gap-6 md:gap-8 mb-14 md:mb-20"
+          >
+            {RESEARCH_INSIGHTS.map((insight) => (
+              <motion.article
+                key={insight.number}
+                variants={fadeInItem}
+                className="min-w-0"
+              >
+                <div className="relative aspect-[4/3] mb-5 overflow-hidden rounded-2xl bg-[var(--muted-bg)]">
+                  <Image src={insight.image} alt={insight.alt} fill className="object-cover" />
+                </div>
+                <div>
+                  <p className="text-[13px] text-[var(--accent)] font-mono mb-3">{insight.number} —</p>
+                  <h3 className="text-[20px] font-semibold leading-tight mb-4">{insight.title}</h3>
+                  <p className="text-[15px] text-[var(--muted-text)] leading-relaxed">{insight.description}</p>
+                </div>
+              </motion.article>
+            ))}
+          </motion.div>
+
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={fadeIn} className="max-w-[900px] border-t border-[var(--subtle)] pt-10 md:pt-12">
+            <p className="text-[14px] text-[var(--accent)] uppercase tracking-wider mb-6">Core Insight</p>
+            <h3 className="text-[28px] md:text-[36px] font-semibold leading-[1.15] tracking-[-0.02em] mb-6">
+              The issue wasn&apos;t complexity — it was lack of direction.
+            </h3>
             <p className="text-[18px] md:text-[21px] text-[var(--muted-text)] leading-relaxed">
               Users didn&apos;t need more information. They needed a flow that clearly guided them through what mattered, in the right order.
             </p>
@@ -252,13 +321,26 @@ export default function UnduitCaseStudy() {
       <section className="py-20 md:py-28 bg-[var(--muted-bg)]">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={fadeIn}>
           <div className="container-main mb-12">
-            <p className="text-[14px] text-[var(--accent)] uppercase tracking-wider mb-6">Transformation</p>
-            <h2 className="text-[32px] md:text-[42px] lg:text-[52px] font-semibold leading-[1.1] tracking-[-0.02em] mb-4">
-              See the difference.
-            </h2>
-            <p className="text-[18px] text-[var(--muted-text)] max-w-[600px]">
-              Drag the slider to compare the original interface with the redesigned version.
-            </p>
+            <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-center">
+              <div>
+                <p className="text-[14px] text-[var(--accent)] uppercase tracking-wider mb-6">Transformation</p>
+                <h2 className="text-[32px] md:text-[42px] lg:text-[52px] font-semibold leading-[1.1] tracking-[-0.02em] mb-4">
+                  See the difference.
+                </h2>
+                <p className="text-[18px] text-[var(--muted-text)] max-w-[600px]">
+                  Drag the slider to compare the original interface with the redesigned version.
+                </p>
+              </div>
+              <div className="flex justify-center md:min-w-[280px]">
+                <button
+                  onClick={() => setComparisonModal(0)}
+                  className="inline-flex shrink-0 items-center justify-center gap-2 px-6 py-3 bg-[var(--text)] text-white rounded-full text-[15px] font-medium hover:bg-[var(--accent)] transition-colors"
+                >
+                  <span>Compare Before & After</span>
+                  <span>→</span>
+                </button>
+              </div>
+            </div>
           </div>
           <div className="px-4 md:px-8">
             <figure className="max-w-[1200px] mx-auto">
@@ -285,6 +367,7 @@ export default function UnduitCaseStudy() {
             
             {/* Apple-style cards with animated icons */}
             <div className="grid md:grid-cols-3 gap-6">
+              {/* Card 1: Guided Linear Flow — vertical stepper */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -293,17 +376,61 @@ export default function UnduitCaseStudy() {
                 className="bg-white rounded-3xl p-8 shadow-sm border border-[var(--subtle)] group"
               >
                 <motion.div 
-                  className="w-12 h-12 mb-6 text-[var(--accent)]"
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  className="relative w-14 h-14 mb-6 rounded-2xl border border-[var(--subtle)] bg-[var(--muted-bg)] text-[var(--accent)] flex items-center justify-center overflow-hidden"
+                  initial={{ opacity: 0, scale: 0.85, rotate: -6 }}
+                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  viewport={{ once: true }}
+                  whileHover={{ y: -3, scale: 1.06 }}
+                  transition={{ type: "spring", stiffness: 280, damping: 18, delay: 0.15 }}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-full h-full">
-                    <motion.path 
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+                    {/* Vertical track connecting all steps */}
+                    <motion.path
+                      d="M9 7 L9 17"
                       initial={{ pathLength: 0 }}
                       whileInView={{ pathLength: 1 }}
                       viewport={{ once: true }}
-                      transition={{ duration: 1.5, delay: 0.3 }}
+                      transition={{ duration: 0.65, delay: 0.35, ease: "easeOut" }}
+                    />
+                    {/* Step node 1 */}
+                    <motion.circle cx="9" cy="5" r="2.1"
+                      initial={{ scale: 0, opacity: 0 }}
+                      whileInView={{ scale: 1, opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ type: "spring", stiffness: 420, damping: 14, delay: 0.22 }}
+                    />
+                    {/* Step node 2 */}
+                    <motion.circle cx="9" cy="12" r="2.1"
+                      initial={{ scale: 0, opacity: 0 }}
+                      whileInView={{ scale: 1, opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ type: "spring", stiffness: 420, damping: 14, delay: 0.58 }}
+                    />
+                    {/* Step node 3 */}
+                    <motion.circle cx="9" cy="19" r="2.1"
+                      initial={{ scale: 0, opacity: 0 }}
+                      whileInView={{ scale: 1, opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ type: "spring", stiffness: 420, damping: 14, delay: 0.88 }}
+                    />
+                    {/* Label lines — longest → shortest (priority order) */}
+                    <motion.path d="M12.5 5 L20 5"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      whileInView={{ pathLength: 1, opacity: 0.55 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.32, delay: 0.42 }}
+                    />
+                    <motion.path d="M12.5 12 L17.5 12"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      whileInView={{ pathLength: 1, opacity: 0.55 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.28, delay: 0.72 }}
+                    />
+                    <motion.path d="M12.5 19 L15 19"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      whileInView={{ pathLength: 1, opacity: 0.55 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.22, delay: 1.0 }}
                     />
                   </svg>
                 </motion.div>
@@ -312,6 +439,8 @@ export default function UnduitCaseStudy() {
                   Steps structured in sequence. Critical configuration cannot be skipped.
                 </p>
               </motion.div>
+
+              {/* Card 2: UX Writing — speech bubble with purposeful text lines */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -320,17 +449,35 @@ export default function UnduitCaseStudy() {
                 className="bg-white rounded-3xl p-8 shadow-sm border border-[var(--subtle)] group"
               >
                 <motion.div 
-                  className="w-12 h-12 mb-6 text-[var(--accent)]"
-                  whileHover={{ scale: 1.1, rotate: -5 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  className="relative w-14 h-14 mb-6 rounded-2xl border border-[var(--subtle)] bg-[var(--muted-bg)] text-[var(--accent)] flex items-center justify-center overflow-hidden"
+                  initial={{ opacity: 0, scale: 0.85, rotate: 6 }}
+                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  viewport={{ once: true }}
+                  whileHover={{ y: -3, scale: 1.06 }}
+                  transition={{ type: "spring", stiffness: 280, damping: 18, delay: 0.25 }}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-full h-full">
-                    <motion.path 
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      initial={{ pathLength: 0 }}
-                      whileInView={{ pathLength: 1 }}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+                    {/* Speech bubble outline — rounded rect with bottom-left pointer */}
+                    <motion.path
+                      d="M5 2.5 H19 Q21.5 2.5 21.5 5 V13 Q21.5 15.5 19 15.5 H12.5 L9.5 18.5 L9.5 15.5 H5 Q2.5 15.5 2.5 13 V5 Q2.5 2.5 5 2.5 Z"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      whileInView={{ pathLength: 1, opacity: 1 }}
                       viewport={{ once: true }}
-                      transition={{ duration: 1.5, delay: 0.4 }}
+                      transition={{ duration: 1.05, delay: 0.25, ease: "easeOut" }}
+                    />
+                    {/* Full-width text line — the "intent" copy */}
+                    <motion.path d="M6 7 L18 7"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      whileInView={{ pathLength: 1, opacity: 0.55 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: 0.88 }}
+                    />
+                    {/* Shorter text line — "consequence" copy, not just a label */}
+                    <motion.path d="M6 10.5 L13.5 10.5"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      whileInView={{ pathLength: 1, opacity: 0.55 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.38, delay: 1.1 }}
                     />
                   </svg>
                 </motion.div>
@@ -339,6 +486,8 @@ export default function UnduitCaseStudy() {
                   Microcopy explains intent and consequences, not just labels.
                 </p>
               </motion.div>
+
+              {/* Card 3: Simplification — crop-frame brackets focusing on the essential */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -347,17 +496,45 @@ export default function UnduitCaseStudy() {
                 className="bg-white rounded-3xl p-8 shadow-sm border border-[var(--subtle)] group"
               >
                 <motion.div 
-                  className="w-12 h-12 mb-6 text-[var(--accent)]"
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  className="relative w-14 h-14 mb-6 rounded-2xl border border-[var(--subtle)] bg-[var(--muted-bg)] text-[var(--accent)] flex items-center justify-center overflow-hidden"
+                  initial={{ opacity: 0, scale: 0.85, rotate: -6 }}
+                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  viewport={{ once: true }}
+                  whileHover={{ y: -3, scale: 1.06 }}
+                  transition={{ type: "spring", stiffness: 280, damping: 18, delay: 0.35 }}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-full h-full">
-                    <motion.path 
-                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+                    {/* Corner crop brackets — the "framing" of what matters */}
+                    <motion.path d="M3 8 V3 H8"
                       initial={{ pathLength: 0 }}
                       whileInView={{ pathLength: 1 }}
                       viewport={{ once: true }}
-                      transition={{ duration: 1.5, delay: 0.5 }}
+                      transition={{ duration: 0.42, delay: 0.28 }}
+                    />
+                    <motion.path d="M16 3 H21 V8"
+                      initial={{ pathLength: 0 }}
+                      whileInView={{ pathLength: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.42, delay: 0.38 }}
+                    />
+                    <motion.path d="M21 16 V21 H16"
+                      initial={{ pathLength: 0 }}
+                      whileInView={{ pathLength: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.42, delay: 0.48 }}
+                    />
+                    <motion.path d="M8 21 H3 V16"
+                      initial={{ pathLength: 0 }}
+                      whileInView={{ pathLength: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.42, delay: 0.58 }}
+                    />
+                    {/* Inner focused element — the singular decision that matters */}
+                    <motion.rect x="8.5" y="8.5" width="7" height="7" rx="1.5"
+                      initial={{ scale: 0, opacity: 0 }}
+                      whileInView={{ scale: 1, opacity: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ type: "spring", stiffness: 320, damping: 18, delay: 0.82 }}
                     />
                   </svg>
                 </motion.div>

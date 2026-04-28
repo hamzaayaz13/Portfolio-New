@@ -106,18 +106,21 @@ export default function Page() {
     }
   };
 
+  const activeAudienceContent =
+    AUDIENCES.find((audience) => audience.id === activeAudience) ?? AUDIENCES[0];
+
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] relative">
       <a
         href="https://cursor.com"
         target="_blank"
         rel="noopener noreferrer"
-        className={`${showIntro ? "hero-reveal hero-reveal-5" : "hero-reveal-now"} fixed bottom-6 left-6 z-40 inline-flex items-center gap-1.5 rounded-full border border-[var(--subtle)] bg-[var(--bg)]/90 backdrop-blur-sm px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--muted-text)] hover:text-[var(--text)] hover:border-[var(--muted-text)] transition-colors shadow-sm`}
+        className={`${showIntro ? "hero-reveal hero-reveal-5" : "hero-reveal-now"} cursor-badge-shine fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 overflow-hidden rounded-full border border-[var(--accent)]/25 bg-[var(--bg)]/95 backdrop-blur-sm px-4 py-2 text-[12px] md:text-[13px] font-semibold text-[var(--text)] hover:border-[var(--accent)] hover:shadow-md transition-all shadow-sm`}
       >
-        <span className="text-[var(--accent)]" aria-hidden>
+        <span className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)]/10 text-[var(--accent)]" aria-hidden>
           ✦
         </span>
-        Vibecoded on Cursor
+        <span className="relative z-10">Vibecoded on Cursor</span>
       </a>
 
       {/* Intro overlay - stays in DOM, animates with CSS */}
@@ -145,68 +148,57 @@ export default function Page() {
           </p>
 
           <div
-            className={`${showIntro ? "hero-reveal hero-reveal-2" : "hero-reveal-now"} flex flex-wrap gap-x-1 gap-y-2 mb-6 md:mb-8 w-full min-w-0`}
+            className={`${showIntro ? "hero-reveal hero-reveal-2" : "hero-reveal-now"} mb-5 md:mb-8 w-full min-w-0 overflow-x-auto overflow-y-hidden scrollbar-hide`}
           >
-            {AUDIENCES.map((audience, index) => (
-              <button
-                key={audience.id}
-                onClick={() => setActiveAudience(audience.id)}
-                className="relative pl-[1px] pr-3 py-2 text-[14px] transition-colors duration-150 group"
-              >
-                <span className={`transition-colors duration-150 ${
-                  activeAudience === audience.id
-                    ? "text-[var(--text)]"
-                    : "text-[var(--muted-text)] group-hover:text-[var(--text)]"
-                }`}>
-                  {audience.label}
-                </span>
-                <span 
-                  className={`absolute bottom-0 left-[1px] right-3 h-[2px] bg-[var(--text)] transition-transform duration-200 origin-left ${
-                    activeAudience === audience.id ? "scale-x-100" : "scale-x-0"
-                  }`}
-                />
-                {index < AUDIENCES.length - 1 && (
-                  <span className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-[3px] rounded-full bg-[var(--subtle)]" />
-                )}
-              </button>
-            ))}
+            <div className="inline-flex w-max flex-nowrap gap-x-1 whitespace-nowrap">
+              {AUDIENCES.map((audience, index) => (
+                <button
+                  key={audience.id}
+                  onClick={() => setActiveAudience(audience.id)}
+                  className="relative shrink-0 pl-[1px] pr-3 py-2 text-[14px] transition-colors duration-150 group"
+                >
+                  <span className={`transition-colors duration-150 ${
+                    activeAudience === audience.id
+                      ? "text-[var(--text)]"
+                      : "text-[var(--muted-text)] group-hover:text-[var(--text)]"
+                  }`}>
+                    {audience.label}
+                  </span>
+                  <span 
+                    className={`absolute bottom-0 left-[1px] right-3 h-[2px] bg-[var(--text)] transition-transform duration-200 origin-left ${
+                      activeAudience === audience.id ? "scale-x-100" : "scale-x-0"
+                    }`}
+                  />
+                  {index < AUDIENCES.length - 1 && (
+                    <span className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-[3px] rounded-full bg-[var(--subtle)]" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={`${showIntro ? "hero-reveal hero-reveal-3" : "hero-reveal-now"} w-full max-w-[880px]`}>
+            <h1 className="text-left text-[24px] md:text-[42px] lg:text-[52px] font-semibold leading-[1.2] md:leading-[1.15] tracking-[-0.02em]">
+              {activeAudienceContent.id === "engineers" ? (
+                <>
+                  I&apos;m{" "}
+                  <code className="font-mono whitespace-nowrap bg-[#1a1a1a] text-[#22c55e] px-2 py-1 rounded-md text-[0.85em] align-baseline">
+                    deeply_technical
+                  </code>{" "}
+                  — and while I&apos;m not an engineer, I understand the landscape well enough to{" "}
+                  <code className="font-mono whitespace-nowrap bg-[#1a1a1a] text-[#60a5fa] px-2 py-1 rounded-md text-[0.85em] align-baseline">
+                    collaborate()
+                  </code>{" "}
+                  and contribute meaningfully.
+                </>
+              ) : (
+                activeAudienceContent.heading
+              )}
+            </h1>
           </div>
 
           <div
-            className={`${showIntro ? "hero-reveal hero-reveal-3" : "hero-reveal-now"} relative w-full ${
-              activeAudience === "engineers"
-                ? "min-h-[400px] sm:min-h-[340px] md:min-h-[300px] lg:min-h-[280px]"
-                : "min-h-[200px] md:min-h-[220px] lg:min-h-[220px]"
-            }`}
-          >
-            {AUDIENCES.map((audience) => (
-              <h1
-                key={audience.id}
-                className={`absolute top-0 left-0 right-0 text-left text-[24px] md:text-[42px] lg:text-[52px] font-semibold leading-[1.2] md:leading-[1.15] tracking-[-0.02em] max-w-[880px] transition-opacity duration-150 ${
-                  activeAudience === audience.id ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-                }`}
-              >
-                {audience.id === "engineers" ? (
-                  <>
-                    I&apos;m{" "}
-                    <code className="font-mono whitespace-nowrap bg-[#1a1a1a] text-[#22c55e] px-2 py-1 rounded-md text-[0.85em] align-baseline">
-                      deeply_technical
-                    </code>{" "}
-                    — and while I&apos;m not an engineer, I understand the landscape well enough to{" "}
-                    <code className="font-mono whitespace-nowrap bg-[#1a1a1a] text-[#60a5fa] px-2 py-1 rounded-md text-[0.85em] align-baseline">
-                      collaborate()
-                    </code>{" "}
-                    and contribute meaningfully.
-                  </>
-                ) : (
-                  audience.heading
-                )}
-              </h1>
-            ))}
-          </div>
-
-          <div
-            className={`${showIntro ? "hero-reveal hero-reveal-4" : "hero-reveal-now"} mt-6 md:mt-10 w-full flex justify-start`}
+            className={`${showIntro ? "hero-reveal hero-reveal-4" : "hero-reveal-now"} mt-4 md:mt-10 w-full flex justify-start`}
           >
             <Link
               href="/contact"
@@ -299,16 +291,18 @@ export default function Page() {
                     </div>
                   )}
                   
-                  {/* In Progress tag for CarForce */}
-                  {study.id === "carforce" && (
-                    <div className="absolute top-5 left-5 px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-md shadow-lg">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-semibold text-[#111] uppercase tracking-wide">In Progress</span>
-                        <span className="text-[11px] font-bold text-amber-600">75%</span>
-                      </div>
-                      <div className="mt-1.5 w-[80px] h-[4px] bg-gray-200 rounded-full overflow-hidden">
-                        <div className="h-full w-[75%] bg-gradient-to-r from-amber-400 to-amber-500 rounded-full" />
-                      </div>
+                  {/* Platform chip — Desktop / App */}
+                  {(study.id === "unduit" || study.id === "carforce") && (
+                    <div className="absolute top-5 left-5 flex items-center gap-2">
+                      <span className="inline-flex w-fit items-center rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-md">
+                        {study.id === "unduit" ? "Desktop" : "App"}
+                      </span>
+                      {study.id === "carforce" && (
+                        <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#111] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-md">
+                          <span>In Progress</span>
+                          <span className="font-bold text-amber-600">75%</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </motion.div>
