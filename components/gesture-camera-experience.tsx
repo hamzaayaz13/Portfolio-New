@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Camera } from "lucide-react";
 import type { HandLandmarker } from "@mediapipe/tasks-vision";
 
@@ -706,8 +706,6 @@ const RITUAL_STEPS_STATIC: ReadonlyArray<{ label: string; stickerSrc: string | n
 ];
 
 export function GestureCameraExperience() {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const parallaxFrameRef = useRef<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasSizeRef = useRef({ width: 0, height: 0 });
@@ -741,27 +739,6 @@ export function GestureCameraExperience() {
   const [isLoading, setIsLoading] = useState(false);
   const [ritualPhase, setRitualPhase] = useState<OrbPhase>("idle");
   const [ritualProgress, setRitualProgress] = useState(0);
-
-  const handlePointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
-    if (parallaxFrameRef.current != null) return;
-
-    const { clientX, clientY, currentTarget } = event;
-    const rect = currentTarget.getBoundingClientRect();
-
-    parallaxFrameRef.current = requestAnimationFrame(() => {
-      parallaxFrameRef.current = null;
-      const x = (clientX - rect.left) / rect.width - 0.5;
-      const y = (clientY - rect.top) / rect.height - 0.5;
-
-      rootRef.current?.style.setProperty("--void-x", x.toFixed(4));
-      rootRef.current?.style.setProperty("--void-y", y.toFixed(4));
-    });
-  }, []);
-
-  const handlePointerLeave = useCallback(() => {
-    rootRef.current?.style.setProperty("--void-x", "0");
-    rootRef.current?.style.setProperty("--void-y", "0");
-  }, []);
 
   const commitRitualPhase = useCallback((nextPhase: OrbPhase) => {
     if (ritualPhaseRef.current === nextPhase) {
@@ -1158,14 +1135,6 @@ export function GestureCameraExperience() {
     return () => disposeCameraResources();
   }, [disposeCameraResources]);
 
-  useEffect(() => {
-    return () => {
-      if (parallaxFrameRef.current != null) {
-        cancelAnimationFrame(parallaxFrameRef.current);
-      }
-    };
-  }, []);
-
   const guide = getRitualGuide(ritualPhase, ritualProgress);
 
   const activePillIndex =
@@ -1210,41 +1179,19 @@ export function GestureCameraExperience() {
 
   return (
     <div
-      ref={rootRef}
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
       className={`gesture-camera-root relative h-svh w-full overflow-hidden text-[#F5F7FF] ${
         isWorldReleased ? "limitless-release" : ""
       }`}
       style={{
         color: "#F5F7FF",
         fontFamily: '"Space Grotesk", "Satoshi", "General Sans", Inter, system-ui, sans-serif',
-        "--void-x": "0",
-        "--void-y": "0",
       } as CSSProperties}
     >
-      <div aria-hidden className="pointer-events-none absolute inset-0 z-0 bg-[#02030A]" />
       <div
         aria-hidden
-        className="limitless-layer limitless-stars pointer-events-none absolute inset-0 z-0 will-change-transform"
-        style={{ transform: "translate3d(calc(var(--void-x) * -10px), calc(var(--void-y) * -8px), 0)" }}
+        className="pointer-events-none absolute inset-0 z-0 bg-[#02030A] bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url(/Images/wp9267744-stars-4k-dark-wallpapers.jpg)" }}
       />
-      <div
-        aria-hidden
-        className="limitless-layer limitless-nebula pointer-events-none absolute inset-[-8%] z-0 will-change-transform"
-        style={{ transform: "translate3d(calc(var(--void-x) * 8px), calc(var(--void-y) * 6px), 0)" }}
-      />
-      <div
-        aria-hidden
-        className="limitless-layer limitless-clouds pointer-events-none absolute inset-[-12%] z-0 will-change-transform"
-        style={{ transform: "translate3d(calc(var(--void-x) * 12px), calc(var(--void-y) * 10px), 0)" }}
-      />
-      <div
-        aria-hidden
-        className="limitless-layer limitless-particles pointer-events-none absolute inset-0 z-0 will-change-transform"
-        style={{ transform: "translate3d(calc(var(--void-x) * -18px), calc(var(--void-y) * -14px), 0)" }}
-      />
-      <div aria-hidden className="limitless-layer limitless-vignette pointer-events-none absolute inset-0 z-0" />
 
       <div className="relative z-10 mx-auto flex h-full w-full max-w-[1240px] flex-col px-4 pb-3 pt-[6.2rem] sm:px-6 sm:pb-4 md:pt-[6.35rem]">
         <section className="relative z-10 h-[129px] shrink-0 text-center">
