@@ -150,15 +150,262 @@
 
   @keyframes ritual-boot-sweep {
     0% {
-      transform: translateX(-100%);
+      transform: translateX(-120%);
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
     }
     100% {
-      transform: translateX(350%);
+      transform: translateX(310%);
+      opacity: 0;
     }
   }
 
   .animate-ritual-boot-sweep {
     animation: ritual-boot-sweep 1.4s ease-in-out infinite;
+  }
+
+  @keyframes ritual-cell-spark {
+    0% {
+      transform: translateX(-140%);
+    }
+    100% {
+      transform: translateX(140%);
+    }
+  }
+
+  .animate-ritual-cell-spark {
+    animation: ritual-cell-spark 1.1s ease-in-out infinite;
+  }
+
+  @keyframes limitless-stars-drift {
+    0% {
+      background-position: 0 0, 44px 68px;
+    }
+    100% {
+      background-position: 34px 48px, 18px 96px;
+    }
+  }
+
+  @keyframes limitless-nebula-shift {
+    0%,
+    100% {
+      opacity: 0.1;
+    }
+    50% {
+      opacity: 0.12;
+    }
+  }
+
+  @keyframes limitless-cloud-shift {
+    0%,
+    100% {
+      opacity: 0.075;
+      background-position: 0 0, 100% 100%;
+    }
+    50% {
+      opacity: 0.095;
+      background-position: 12px -8px, calc(100% - 10px) calc(100% + 8px);
+    }
+  }
+
+  @keyframes limitless-breathe {
+    0%,
+    100% {
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 0 40px rgba(77, 163, 255, 0.07),
+        0 0 58px rgba(155, 92, 255, 0.06);
+    }
+    50% {
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 0 46px rgba(77, 163, 255, 0.085),
+        0 0 66px rgba(155, 92, 255, 0.075);
+    }
+  }
+
+  @keyframes hologram-float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) rotate(5deg);
+    }
+    50% {
+      transform: translate3d(0, -6px, 0) rotate(4deg);
+    }
+  }
+
+  @keyframes hologram-force {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) rotate(5deg);
+    }
+    38% {
+      transform: translate3d(6px, -4px, 0) rotate(7deg);
+    }
+  }
+
+  .limitless-stars {
+    background-image:
+      radial-gradient(circle, rgba(245, 247, 255, 0.42) 0 1px, transparent 1.4px),
+      radial-gradient(circle, rgba(77, 163, 255, 0.26) 0 1px, transparent 1.8px),
+      radial-gradient(circle, rgba(155, 92, 255, 0.18) 0 1px, transparent 1.9px);
+    background-position: 0 0, 44px 68px, 92px 28px;
+    background-size: 124px 124px, 186px 186px, 248px 248px;
+    opacity: 0.62;
+    animation: limitless-stars-drift 72s linear infinite;
+  }
+
+  .limitless-nebula {
+    background:
+      radial-gradient(ellipse at 46% 24%, rgba(77, 163, 255, 0.1), transparent 42%),
+      radial-gradient(ellipse at 62% 58%, rgba(155, 92, 255, 0.085), transparent 46%);
+    filter: blur(42px);
+    opacity: 0.1;
+    animation: limitless-nebula-shift 18s ease-in-out infinite;
+  }
+
+  .limitless-clouds {
+    background:
+      radial-gradient(ellipse at 0% 52%, rgba(77, 163, 255, 0.09), transparent 42%),
+      radial-gradient(ellipse at 100% 38%, rgba(155, 92, 255, 0.09), transparent 44%);
+    background-repeat: no-repeat;
+    filter: blur(64px);
+    opacity: 0.08;
+    animation: limitless-cloud-shift 26s ease-in-out infinite;
+  }
+
+  .limitless-particles {
+    background-image:
+      radial-gradient(circle, rgba(245, 247, 255, 0.34) 0 1px, transparent 1.5px),
+      radial-gradient(circle, rgba(155, 92, 255, 0.26) 0 1px, transparent 1.4px);
+    background-position: 18px 30px, 80px 20px;
+    background-size: 192px 192px, 286px 286px;
+    opacity: 0.19;
+    animation: limitless-stars-drift 46s linear infinite reverse;
+  }
+
+  .limitless-vignette {
+    background:
+      radial-gradient(circle at 50% 44%, transparent 0%, transparent 38%, rgba(2, 3, 10, 0.54) 74%, rgba(2, 3, 10, 0.92) 100%),
+      linear-gradient(180deg, rgba(2, 3, 10, 0.08), rgba(2, 3, 10, 0.36));
+  }
+
+  .limitless-chamber {
+    animation: limitless-breathe 5.8s ease-in-out infinite;
+  }
+
+  .hologram-card {
+    transform-origin: 65% 12%;
+    animation: hologram-float 6s ease-in-out infinite;
+  }
+
+  .camera-feed-cinematic {
+    filter: brightness(0.95) contrast(1.08) saturate(0.96);
+  }
+
+  .film-grain {
+    background-image:
+      radial-gradient(circle, rgba(245, 247, 255, 0.4) 0 0.7px, transparent 0.8px),
+      radial-gradient(circle, rgba(77, 163, 255, 0.18) 0 0.6px, transparent 0.8px);
+    background-size: 4px 4px, 7px 7px;
+    mix-blend-mode: screen;
+  }
+
+  @keyframes limitless-release-ui {
+    0% {
+      filter: brightness(1) hue-rotate(0deg);
+      transform: translate3d(0, 0, 0);
+    }
+    24% {
+      filter: brightness(1.07) hue-rotate(2deg);
+      transform: translate3d(2px, -1px, 0);
+    }
+    100% {
+      filter: brightness(1) hue-rotate(0deg);
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes limitless-release-chamber {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    34% {
+      transform: scale(1.012);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.075),
+        0 0 52px rgba(77, 163, 255, 0.13),
+        0 0 74px rgba(155, 92, 255, 0.13);
+    }
+  }
+
+  @keyframes limitless-release-heading {
+    0%,
+    100% {
+      transform: scaleX(1);
+    }
+    45% {
+      transform: scaleX(1.018);
+    }
+  }
+
+  @keyframes limitless-release-shockwave {
+    0% {
+      opacity: 0.18;
+      transform: translate(-50%, -50%) scale(0.35);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.7);
+    }
+  }
+
+  .limitless-release {
+    animation: limitless-release-ui 900ms cubic-bezier(0.19, 1, 0.22, 1);
+  }
+
+  .limitless-release .limitless-stars,
+  .limitless-release .limitless-nebula,
+  .limitless-release .limitless-particles {
+    transform: translate3d(0, 0, 0) scale(0.985) !important;
+    transition: transform 700ms cubic-bezier(0.19, 1, 0.22, 1);
+  }
+
+  .limitless-release .limitless-particles {
+    animation-duration: 12s;
+  }
+
+  .limitless-release .limitless-chamber {
+    animation:
+      limitless-release-chamber 700ms cubic-bezier(0.19, 1, 0.22, 1),
+      limitless-breathe 5.8s ease-in-out infinite 700ms;
+  }
+
+  .limitless-release .hologram-card {
+    animation:
+      hologram-force 700ms cubic-bezier(0.19, 1, 0.22, 1),
+      hologram-float 6s ease-in-out infinite 700ms;
+  }
+
+  .limitless-release .limitless-heading {
+    animation: limitless-release-heading 280ms ease-out;
+  }
+
+  .limitless-release::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 40;
+    width: min(72vw, 760px);
+    aspect-ratio: 1;
+    border-radius: 999px;
+    border: 1px solid rgba(155, 92, 255, 0.18);
+    animation: limitless-release-shockwave 900ms ease-out both;
   }
 
   .hero-intro-overlay {

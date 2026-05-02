@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, Hand, MousePointer2, Pause, Sparkles, Waves } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { Camera } from "lucide-react";
 import type { HandLandmarker } from "@mediapipe/tasks-vision";
 
 type Landmark = {
@@ -22,12 +22,6 @@ type EnergyParticle = {
   life: number;
   size: number;
   color?: EnergyColor;
-};
-
-type EnergyBurst = {
-  x: number;
-  y: number;
-  startedAt: number;
 };
 
 type EnergyColor = "red" | "blue" | "purple";
@@ -69,87 +63,28 @@ type TrackedHand = {
   depth: number;
 };
 
-const CHARGE_DURATION = 3500;
+const CHARGE_DURATION = 3000;
+const CHARGE_CELLS = 7;
 const MERGE_DURATION = 2200;
+const DETECTION_INTERVAL_MS = 1000 / 30;
+const MAX_CANVAS_DPR = 1.5;
+const RITUAL_PROGRESS_EPSILON = 0.02;
 
-const GESTURE_ACTIONS: Record<
-  Exclude<GestureKey, "none">,
-  {
-    label: string;
-    instruction: string;
-    result: string;
-    icon: typeof Hand;
-  }
-> = {
-  open_palm: {
-    label: "Open Palm",
-    instruction: "Show your full hand",
-    result: "Reveal content",
-    icon: Sparkles,
-  },
-  pinch: {
-    label: "Pinch",
-    instruction: "Touch index finger and thumb",
-    result: "Select item",
-    icon: MousePointer2,
-  },
-  point: {
-    label: "Point",
-    instruction: "Raise only your index finger",
-    result: "Charge energy orb",
-    icon: Hand,
-  },
-  fist: {
-    label: "Fist",
-    instruction: "Close your hand",
-    result: "Pause interaction",
-    icon: Pause,
-  },
-  swipe_left: {
-    label: "Swipe Left",
-    instruction: "Move your hand left",
-    result: "Previous card",
-    icon: Waves,
-  },
-  swipe_right: {
-    label: "Swipe Right",
-    instruction: "Move your hand right",
-    result: "Next card",
-    icon: Waves,
-  },
-};
-
-const ACTION_ORDER: Exclude<GestureKey, "none">[] = ["open_palm", "pinch", "point", "fist"];
-
-const RITUAL_ACTIONS = [
-  {
-    title: "Point index finger",
-    body: "Hold one index finger steady for 7 seconds to charge the red orb.",
-    icon: Hand,
-  },
-  {
-    title: "Raise other finger",
-    body: "After red locks, use your other index finger to charge the blue orb.",
-    icon: Sparkles,
-  },
-  {
-    title: "Bring fingers close",
-    body: "Move both charged fingers together to blend red and blue into purple.",
-    icon: Waves,
-  },
-  {
-    title: "Pinch / open palm",
-    body: "Pinch the purple hand to explode. Show full hand to clear particles.",
-    icon: MousePointer2,
-  },
-];
+const HAND_CONNECTIONS = [
+  [0, 1], [1, 2], [2, 3], [3, 4],
+  [0, 5], [5, 6], [6, 7], [7, 8],
+  [5, 9], [9, 10], [10, 11], [11, 12],
+  [9, 13], [13, 14], [14, 15], [15, 16],
+  [13, 17], [17, 18], [18, 19], [19, 20],
+  [0, 17],
+] as const;
 
 function getRitualGuide(phase: OrbPhase, progress: number) {
   if (phase === "red_charging") {
     return {
       eyebrow: "Step 01",
-      title: `Charging red orb (${Math.min(Math.floor(progress * 7), 7)} / 7 cells)`,
-      body: "Keep this index finger steady. If you remove it before 7 seconds, the red charge resets.",
+      title: `Charging red orb (${Math.min(Math.floor(progress * CHARGE_CELLS), CHARGE_CELLS)} / ${CHARGE_CELLS} cells)`,
+      body: "Keep this index finger steady. If you remove it before the cells lock, the red charge resets.",
       tone: "red",
     };
   }
@@ -166,8 +101,8 @@ function getRitualGuide(phase: OrbPhase, progress: number) {
   if (phase === "blue_charging") {
     return {
       eyebrow: "Step 03",
-      title: `Charging blue orb (${Math.min(Math.floor(progress * 7), 7)} / 7 cells)`,
-      body: "Hold the second finger steady for the full 7 seconds. Removing it resets blue only.",
+      title: `Charging blue orb (${Math.min(Math.floor(progress * CHARGE_CELLS), CHARGE_CELLS)} / ${CHARGE_CELLS} cells)`,
+      body: "Hold the second finger steady until all cells lock. Removing it resets blue only.",
       tone: "blue",
     };
   }
@@ -224,19 +159,13 @@ function isFingerExtended(landmarks: Landmark[], tip: number, pip: number) {
   return landmarks[tip].y < landmarks[pip].y - 0.025;
 }
 
-function detectGesture(landmarks: Landmark[], wristHistory: number[]): GestureKey {
+function detectGesture(landmarks: Landmark[]): GestureKey {
   const indexExtended = isFingerExtended(landmarks, 8, 6);
   const middleExtended = isFingerExtended(landmarks, 12, 10);
   const ringExtended = isFingerExtended(landmarks, 16, 14);
   const pinkyExtended = isFingerExtended(landmarks, 20, 18);
   const extendedCount = [indexExtended, middleExtended, ringExtended, pinkyExtended].filter(Boolean).length;
   const pinchDistance = distance(landmarks[4], landmarks[8]);
-
-  if (wristHistory.length >= 8) {
-    const movement = wristHistory[wristHistory.length - 1] - wristHistory[0];
-    if (movement > 0.22) return "swipe_right";
-    if (movement < -0.22) return "swipe_left";
-  }
 
   if (pinchDistance < 0.055) return "pinch";
   if (extendedCount >= 4) return "open_palm";
@@ -341,6 +270,30 @@ function spawnInwardParticles(particles: EnergyParticle[], point: Point, color: 
   if (particles.length > 240) {
     particles.splice(0, particles.length - 240);
   }
+}
+
+function getCanvasContext(canvas: HTMLCanvasElement) {
+  return canvas.getContext("2d", { alpha: true, desynchronized: true });
+}
+
+function syncCanvasSize(canvas: HTMLCanvasElement, video: HTMLVideoElement | null, cachedSize: { width: number; height: number }) {
+  const rect = canvas.getBoundingClientRect();
+  const displayWidth = Math.round(rect.width || video?.videoWidth || 640);
+  const displayHeight = Math.round(rect.height || video?.videoHeight || 480);
+  const dpr = Math.min(window.devicePixelRatio || 1, MAX_CANVAS_DPR);
+  const width = Math.round(displayWidth * dpr);
+  const height = Math.round(displayHeight * dpr);
+
+  if (cachedSize.width === width && cachedSize.height === height) {
+    return false;
+  }
+
+  canvas.width = width;
+  canvas.height = height;
+  cachedSize.width = width;
+  cachedSize.height = height;
+
+  return true;
 }
 
 function drawChargedOrb(
@@ -621,275 +574,12 @@ function drawScreenParticles(
   ctx.restore();
 }
 
-function drawEnergyOrb(
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  fingerTip: Landmark,
-  gesture: GestureKey,
-  particles: EnergyParticle[],
-  bursts: EnergyBurst[],
-  now: number
-) {
-  const x = canvas.width - fingerTip.x * canvas.width;
-  const y = fingerTip.y * canvas.height;
-  const orbActive = gesture === "point" || gesture === "pinch";
-
-  if (orbActive) {
-    for (let i = 0; i < 5; i += 1) {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = 72 + Math.random() * 120;
-      const particleX = x + Math.cos(angle) * radius;
-      const particleY = y + Math.sin(angle) * radius;
-
-      particles.push({
-        x: particleX,
-        y: particleY,
-        previousX: particleX,
-        previousY: particleY,
-        vx: Math.cos(angle + Math.PI) * (0.6 + Math.random() * 1.2),
-        vy: Math.sin(angle + Math.PI) * (0.6 + Math.random() * 1.2),
-        life: 1,
-        size: 1.5 + Math.random() * 3.5,
-      });
-    }
-
-    if (particles.length > 150) {
-      particles.splice(0, particles.length - 150);
-    }
-  }
-
-  ctx.save();
-
-  if (orbActive) {
-    const warpPulse = Math.sin(now / 170) * 0.5 + 0.5;
-
-    ctx.globalCompositeOperation = "source-over";
-    ctx.strokeStyle = `rgba(255, 20, 70, ${0.08 + warpPulse * 0.08})`;
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 3; i += 1) {
-      ctx.beginPath();
-      ctx.arc(x, y, 72 + i * 30 + warpPulse * 18, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    const compressedAir = ctx.createRadialGradient(x, y, 12, x, y, 170);
-    compressedAir.addColorStop(0, "rgba(40, 0, 8, 0)");
-    compressedAir.addColorStop(0.45, "rgba(255, 0, 58, 0.06)");
-    compressedAir.addColorStop(0.72, "rgba(0, 0, 0, 0.18)");
-    compressedAir.addColorStop(1, "rgba(0, 0, 0, 0)");
-    ctx.fillStyle = compressedAir;
-    ctx.beginPath();
-    ctx.arc(x, y, 175, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.globalCompositeOperation = "lighter";
-
-  for (let i = particles.length - 1; i >= 0; i -= 1) {
-    const particle = particles[i];
-    particle.previousX = particle.x;
-    particle.previousY = particle.y;
-
-    const dx = x - particle.x;
-    const dy = y - particle.y;
-    const dist = Math.max(Math.hypot(dx, dy), 1);
-    const pull = 0.028 + (1 - Math.min(dist / 190, 1)) * 0.14;
-
-    particle.vx += (dx / dist) * pull;
-    particle.vy += (dy / dist) * pull;
-    particle.x += particle.vx;
-    particle.y += particle.vy;
-    particle.vx *= 0.982;
-    particle.vy *= 0.982;
-    particle.life -= dist < 20 ? 0.11 : 0.018;
-
-    if (particle.life <= 0 || dist < 8) {
-      particles.splice(i, 1);
-      continue;
-    }
-
-    const speed = Math.min(Math.hypot(particle.vx, particle.vy), 9);
-    ctx.strokeStyle = `rgba(255, 42, 84, ${particle.life * 0.52})`;
-    ctx.lineWidth = particle.size;
-    ctx.beginPath();
-    ctx.moveTo(particle.previousX, particle.previousY);
-    ctx.lineTo(particle.x - particle.vx * (1.8 + speed * 0.25), particle.y - particle.vy * (1.8 + speed * 0.25));
-    ctx.stroke();
-
-    const particleGradient = ctx.createRadialGradient(
-      particle.x,
-      particle.y,
-      0,
-      particle.x,
-      particle.y,
-      particle.size * 4
-    );
-    particleGradient.addColorStop(0, `rgba(255, 255, 255, ${particle.life * 0.9})`);
-    particleGradient.addColorStop(0.28, `rgba(255, 20, 65, ${particle.life * 0.82})`);
-    particleGradient.addColorStop(1, "rgba(80, 0, 16, 0)");
-    ctx.fillStyle = particleGradient;
-    ctx.beginPath();
-    ctx.arc(particle.x, particle.y, particle.size * 4, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  for (let i = bursts.length - 1; i >= 0; i -= 1) {
-    const burst = bursts[i];
-    const progress = (now - burst.startedAt) / 700;
-
-    if (progress >= 1) {
-      bursts.splice(i, 1);
-      continue;
-    }
-
-    const alpha = 1 - progress;
-    const radius = 22 + progress * 120;
-
-    ctx.strokeStyle = `rgba(255, 70, 130, ${alpha * 0.75})`;
-    ctx.lineWidth = 5 - progress * 3;
-    ctx.beginPath();
-    ctx.arc(burst.x, burst.y, radius, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(burst.x, burst.y, radius * 0.62, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-
-  if (orbActive) {
-    const pulse = Math.sin(now / 118) * 0.5 + 0.5;
-    const violentPulse = Math.sin(now / 47) * 0.5 + 0.5;
-    const charge = Math.min(particles.length / 130, 1);
-    const coreRadius = gesture === "pinch" ? 34 : 18 + charge * 12 + pulse * 5;
-    const auraRadius = gesture === "pinch" ? 132 : 76 + charge * 62 + pulse * 28;
-
-    const aura = ctx.createRadialGradient(x, y, 0, x, y, auraRadius);
-    aura.addColorStop(0, "rgba(255, 245, 245, 0.86)");
-    aura.addColorStop(0.08, "rgba(255, 33, 74, 0.86)");
-    aura.addColorStop(0.32, "rgba(210, 0, 42, 0.58)");
-    aura.addColorStop(0.68, "rgba(75, 0, 16, 0.24)");
-    aura.addColorStop(1, "rgba(10, 0, 0, 0)");
-    ctx.fillStyle = aura;
-    ctx.beginPath();
-    ctx.arc(x, y, auraRadius, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = `rgba(255, 24, 66, ${0.42 + pulse * 0.28})`;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(x, y, coreRadius + 22 + violentPulse * 5, -now / 220, Math.PI * 1.45 - now / 220);
-    ctx.stroke();
-
-    ctx.strokeStyle = `rgba(255, 255, 255, ${0.22 + violentPulse * 0.32})`;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(x, y, coreRadius + 38 + pulse * 8, now / 310, Math.PI * 1.25 + now / 310);
-    ctx.stroke();
-
-    for (let i = 0; i < 18; i += 1) {
-      const angle = (Math.PI * 2 * i) / 18 + now / 380;
-      const flicker = 0.45 + Math.abs(Math.sin(now / 53 + i * 1.7)) * 0.9;
-      const inner = coreRadius * (1.04 + Math.sin(now / 80 + i) * 0.05);
-      const outer = inner + (12 + charge * 18) * flicker;
-
-      ctx.strokeStyle = `rgba(255, ${24 + i * 3}, ${54 + i * 2}, ${0.2 + flicker * 0.32})`;
-      ctx.lineWidth = 1 + flicker * 1.4;
-      ctx.beginPath();
-      ctx.moveTo(x + Math.cos(angle) * inner, y + Math.sin(angle) * inner);
-      ctx.lineTo(x + Math.cos(angle) * outer, y + Math.sin(angle) * outer);
-      ctx.stroke();
-    }
-
-    const plasma = ctx.createRadialGradient(x - 5, y - 6, 0, x, y, coreRadius * 1.55);
-    plasma.addColorStop(0, "rgba(255, 242, 242, 0.96)");
-    plasma.addColorStop(0.18, "rgba(255, 36, 77, 0.92)");
-    plasma.addColorStop(0.48, "rgba(120, 0, 25, 0.88)");
-    plasma.addColorStop(0.73, "rgba(255, 12, 48, 0.68)");
-    plasma.addColorStop(1, "rgba(70, 0, 12, 0)");
-    ctx.fillStyle = plasma;
-    ctx.beginPath();
-    ctx.arc(x, y, coreRadius * 1.45, 0, Math.PI * 2);
-    ctx.fill();
-
-    const collapsedCore = ctx.createRadialGradient(x, y, 0, x, y, coreRadius);
-    collapsedCore.addColorStop(0, "rgba(5, 0, 2, 0.98)");
-    collapsedCore.addColorStop(0.42, "rgba(34, 0, 8, 0.95)");
-    collapsedCore.addColorStop(0.7, "rgba(110, 0, 22, 0.55)");
-    collapsedCore.addColorStop(1, "rgba(255, 20, 56, 0)");
-    ctx.fillStyle = collapsedCore;
-    ctx.beginPath();
-    ctx.arc(x, y, coreRadius * 0.88, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = `rgba(0, 0, 0, ${0.45 + charge * 0.25})`;
-    ctx.beginPath();
-    ctx.arc(x, y, coreRadius * 0.34, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.restore();
-}
-
-function drawLandmarks(
-  canvas: HTMLCanvasElement,
-  landmarks: Landmark[],
-  gesture: GestureKey,
-  particles: EnergyParticle[],
-  bursts: EnergyBurst[],
-  now: number
-) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "rgba(255,255,255,0.65)";
-  ctx.fillStyle = "rgba(255,255,255,0.92)";
-
-  const connections = [
-    [0, 1], [1, 2], [2, 3], [3, 4],
-    [0, 5], [5, 6], [6, 7], [7, 8],
-    [5, 9], [9, 10], [10, 11], [11, 12],
-    [9, 13], [13, 14], [14, 15], [15, 16],
-    [13, 17], [17, 18], [18, 19], [19, 20],
-    [0, 17],
-  ];
-
-  connections.forEach(([start, end]) => {
-    const a = landmarks[start];
-    const b = landmarks[end];
-    ctx.beginPath();
-    ctx.moveTo(canvas.width - a.x * canvas.width, a.y * canvas.height);
-    ctx.lineTo(canvas.width - b.x * canvas.width, b.y * canvas.height);
-    ctx.stroke();
-  });
-
-  landmarks.forEach((landmark, index) => {
-    ctx.beginPath();
-    ctx.arc(canvas.width - landmark.x * canvas.width, landmark.y * canvas.height, index === 8 || index === 4 ? 5 : 3.5, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  drawEnergyOrb(ctx, canvas, landmarks[8], gesture, particles, bursts, now);
-}
-
 function drawHandSkeleton(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, landmarks: Landmark[]) {
   ctx.lineWidth = 2;
   ctx.strokeStyle = "rgba(255,255,255,0.45)";
   ctx.fillStyle = "rgba(255,255,255,0.78)";
 
-  const connections = [
-    [0, 1], [1, 2], [2, 3], [3, 4],
-    [0, 5], [5, 6], [6, 7], [7, 8],
-    [5, 9], [9, 10], [10, 11], [11, 12],
-    [9, 13], [13, 14], [14, 15], [15, 16],
-    [13, 17], [17, 18], [18, 19], [19, 20],
-    [0, 17],
-  ];
-
-  connections.forEach(([start, end]) => {
+  HAND_CONNECTIONS.forEach(([start, end]) => {
     const a = landmarks[start];
     const b = landmarks[end];
     ctx.beginPath();
@@ -913,7 +603,7 @@ function drawOrbRitualScene(
   screenParticles: ScreenParticle[],
   now: number
 ) {
-  const ctx = canvas.getContext("2d");
+  const ctx = getCanvasContext(canvas);
   if (!ctx) return;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1016,15 +706,18 @@ const RITUAL_STEPS_STATIC: ReadonlyArray<{ label: string; stickerSrc: string | n
 ];
 
 export function GestureCameraExperience() {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const parallaxFrameRef = useRef<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasSizeRef = useRef({ width: 0, height: 0 });
   const streamRef = useRef<MediaStream | null>(null);
   const landmarkerRef = useRef<HandLandmarker | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const wristHistoryRef = useRef<number[]>([]);
   const energyParticlesRef = useRef<EnergyParticle[]>([]);
-  const energyBurstsRef = useRef<EnergyBurst[]>([]);
   const screenParticlesRef = useRef<ScreenParticle[]>([]);
+  const trackedHandsRef = useRef<TrackedHand[]>([]);
+  const lastDetectionAtRef = useRef(0);
   const ritualRef = useRef<OrbRitualState>({
     phase: "idle",
     redStartedAt: null,
@@ -1036,22 +729,58 @@ export function GestureCameraExperience() {
     combinedAt: null,
     explodedAt: null,
   });
-  const lastGestureRef = useRef<GestureKey>("none");
-  const lastTriggerRef = useRef(0);
   /** Synchronous guard — runDetection must not schedule RAF after stop/unmount (fixes orphan loops on refresh). */
   const isRunningRef = useRef(false);
   const isStartingRef = useRef(false);
   /** Bumps when stopping so any in-flight runDetection tail cannot schedule another RAF. */
   const rafEpochRef = useRef(0);
+  const ritualPhaseRef = useRef<OrbPhase>("idle");
+  const ritualProgressRef = useRef(0);
 
   const [isRunning, setIsRunning] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [status, setStatus] = useState("Camera is off. Start the demo to begin hand tracking.");
-  const [gesture, setGesture] = useState<GestureKey>("none");
-  const [activeAction, setActiveAction] = useState<Exclude<GestureKey, "none">>("open_palm");
-  const [eventCount, setEventCount] = useState(0);
   const [ritualPhase, setRitualPhase] = useState<OrbPhase>("idle");
   const [ritualProgress, setRitualProgress] = useState(0);
+
+  const handlePointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    if (parallaxFrameRef.current != null) return;
+
+    const { clientX, clientY, currentTarget } = event;
+    const rect = currentTarget.getBoundingClientRect();
+
+    parallaxFrameRef.current = requestAnimationFrame(() => {
+      parallaxFrameRef.current = null;
+      const x = (clientX - rect.left) / rect.width - 0.5;
+      const y = (clientY - rect.top) / rect.height - 0.5;
+
+      rootRef.current?.style.setProperty("--void-x", x.toFixed(4));
+      rootRef.current?.style.setProperty("--void-y", y.toFixed(4));
+    });
+  }, []);
+
+  const handlePointerLeave = useCallback(() => {
+    rootRef.current?.style.setProperty("--void-x", "0");
+    rootRef.current?.style.setProperty("--void-y", "0");
+  }, []);
+
+  const commitRitualPhase = useCallback((nextPhase: OrbPhase) => {
+    if (ritualPhaseRef.current === nextPhase) {
+      return;
+    }
+
+    ritualPhaseRef.current = nextPhase;
+    setRitualPhase(nextPhase);
+  }, []);
+
+  const commitRitualProgress = useCallback((nextProgress: number, force = false) => {
+    const clamped = Math.max(0, Math.min(nextProgress, 1));
+    if (!force && Math.abs(ritualProgressRef.current - clamped) < RITUAL_PROGRESS_EPSILON) {
+      return;
+    }
+
+    ritualProgressRef.current = clamped;
+    setRitualProgress(clamped);
+  }, []);
 
   /** Tear down streams/RAF without React updates — safe on unmount (avoids setState after unmount). */
   const disposeCameraResources = useCallback(() => {
@@ -1082,14 +811,15 @@ export function GestureCameraExperience() {
     }
 
     if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext("2d");
+      const ctx = getCanvasContext(canvasRef.current);
       ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
 
-    wristHistoryRef.current = [];
     energyParticlesRef.current = [];
-    energyBurstsRef.current = [];
     screenParticlesRef.current = [];
+    trackedHandsRef.current = [];
+    lastDetectionAtRef.current = 0;
+    canvasSizeRef.current = { width: 0, height: 0 };
     ritualRef.current = {
       phase: "idle",
       redStartedAt: null,
@@ -1101,17 +831,47 @@ export function GestureCameraExperience() {
       combinedAt: null,
       explodedAt: null,
     };
-    lastGestureRef.current = "none";
   }, []);
 
   const stopCamera = useCallback(() => {
     disposeCameraResources();
     setIsRunning(false);
-    setGesture("none");
+    ritualPhaseRef.current = "idle";
+    ritualProgressRef.current = 0;
     setRitualPhase("idle");
     setRitualProgress(0);
-    setStatus("Camera is off. Start the demo to begin hand tracking.");
   }, [disposeCameraResources]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+
+    const syncSize = () => {
+      syncCanvasSize(canvas, videoRef.current, canvasSizeRef.current);
+    };
+
+    syncSize();
+
+    const handleWindowResize = () => syncSize();
+    window.addEventListener("resize", handleWindowResize);
+
+    const video = videoRef.current;
+    video?.addEventListener("loadedmetadata", syncSize);
+
+    const resizeObserver = typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(() => syncSize());
+
+    resizeObserver?.observe(canvas);
+
+    return () => {
+      window.removeEventListener("resize", handleWindowResize);
+      video?.removeEventListener("loadedmetadata", syncSize);
+      resizeObserver?.disconnect();
+    };
+  }, []);
 
   const runDetection = useCallback(() => {
     const epoch = rafEpochRef.current;
@@ -1138,47 +898,42 @@ export function GestureCameraExperience() {
       return;
     }
 
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const newW = Math.round((rect.width || video.videoWidth || 640) * dpr);
-    const newH = Math.round((rect.height || video.videoHeight || 480) * dpr);
-    if (canvas.width !== newW || canvas.height !== newH) {
-      canvas.width = newW;
-      canvas.height = newH;
+    const now = performance.now();
+    syncCanvasSize(canvas, video, canvasSizeRef.current);
+
+    if (lastDetectionAtRef.current === 0 || now - lastDetectionAtRef.current >= DETECTION_INTERVAL_MS) {
+      const results = landmarker.detectForVideo(video, now);
+      const detectedHands = (results.landmarks ?? []) as Landmark[][];
+
+      trackedHandsRef.current = detectedHands
+        .map((handLandmarks) => ({
+          landmarks: handLandmarks,
+          gesture: detectGesture(handLandmarks),
+          point: toCanvasPoint(canvas, handLandmarks[8]),
+          depth: getFingerDepth(handLandmarks),
+        }))
+        .sort((a, b) => a.point.x - b.point.x);
+
+      lastDetectionAtRef.current = now;
     }
 
-    const now = performance.now();
-    const results = landmarker.detectForVideo(video, now);
-    const detectedHands = (results.landmarks ?? []) as Landmark[][];
+    const hands = trackedHandsRef.current;
 
-    if (detectedHands.length === 0) {
-      const ctx = canvas.getContext("2d");
+    if (hands.length === 0) {
+      const ctx = getCanvasContext(canvas);
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (screenParticlesRef.current.length > 0) {
           drawScreenParticles(ctx, screenParticlesRef.current, null, canvas);
         }
       }
-      setGesture("none");
-      setStatus("Show one or both hands clearly in the camera frame.");
       scheduleNext();
       return;
     }
 
-    const hands = detectedHands
-      .map((handLandmarks) => ({
-        landmarks: handLandmarks,
-        gesture: detectGesture(handLandmarks, []),
-        point: toCanvasPoint(canvas, handLandmarks[8]),
-        depth: getFingerDepth(handLandmarks),
-      }))
-      .sort((a, b) => a.point.x - b.point.x);
-
     const ritual = ritualRef.current;
     const pointingHands = hands.filter((hand) => hand.gesture === "point");
     const pinchHands = hands.filter((hand) => hand.gesture === "pinch");
-    const primaryGesture = hands[0]?.gesture ?? "none";
-    let nextStatus = "Point one index finger to start charging the red orb.";
     let nextProgress = 0;
 
     if (ritual.phase === "exploded" && screenParticlesRef.current.length < 12) {
@@ -1316,46 +1071,28 @@ export function GestureCameraExperience() {
 
     drawOrbRitualScene(canvas, hands, ritual, energyParticlesRef.current, screenParticlesRef.current, now);
 
-    setGesture(primaryGesture);
-
     if (ritual.phase === "red_charging" && ritual.redStartedAt) {
       nextProgress = Math.min((now - ritual.redStartedAt) / CHARGE_DURATION, 1);
-      nextStatus = `Red orb charging: ${Math.min(Math.floor((now - ritual.redStartedAt) / 1000), 7)} / 7 seconds.`;
     } else if (ritual.phase === "red_ready") {
       nextProgress = 1;
-      nextStatus = "Red orb locked. Point your other index finger to start charging the blue orb.";
     } else if (ritual.phase === "blue_charging" && ritual.blueStartedAt) {
       nextProgress = Math.min((now - ritual.blueStartedAt) / CHARGE_DURATION, 1);
-      nextStatus = `Blue orb charging: ${Math.min(Math.floor((now - ritual.blueStartedAt) / 1000), 7)} / 7 seconds.`;
     } else if (ritual.phase === "blue_ready") {
       nextProgress = 1;
-      nextStatus = "Blue orb locked. Bring both index fingers closer to combine the orbs.";
     } else if (ritual.phase === "merging") {
       nextProgress = ritual.combinedAt ? Math.min((now - ritual.combinedAt) / MERGE_DURATION, 1) : 0;
-      nextStatus = "Red and blue are merging into purple energy. Hold steady for a moment.";
     } else if (ritual.phase === "combined") {
       nextProgress = 1;
-      nextStatus = "Purple orb is anchored to one index finger. Pinch that same hand to detonate it.";
     } else if (ritual.phase === "exploded") {
       nextProgress = 1;
-      nextStatus = "Purple particles released. Open your hand to clear them, or point to pull color into the next orb.";
     }
 
-    setStatus(nextStatus);
-    setRitualPhase(ritual.phase);
-    setRitualProgress(nextProgress);
-
-    if (primaryGesture !== "none" && (primaryGesture !== lastGestureRef.current || now - lastTriggerRef.current > 1200)) {
-      lastGestureRef.current = primaryGesture;
-      lastTriggerRef.current = now;
-
-      const mappedAction = primaryGesture === "swipe_left" || primaryGesture === "swipe_right" ? "open_palm" : primaryGesture;
-      setActiveAction(mappedAction);
-      setEventCount((count) => count + 1);
-    }
+    const phaseChanged = ritual.phase !== ritualPhaseRef.current;
+    commitRitualPhase(ritual.phase);
+    commitRitualProgress(nextProgress, phaseChanged || nextProgress === 0 || nextProgress === 1);
 
     scheduleNext();
-  }, []);
+  }, [commitRitualPhase, commitRitualProgress]);
 
   const startCamera = async () => {
     if (isRunningRef.current || isStartingRef.current) {
@@ -1364,7 +1101,6 @@ export function GestureCameraExperience() {
     isStartingRef.current = true;
     try {
       setIsLoading(true);
-      setStatus("Loading hand tracking model...");
 
       if (!landmarkerRef.current) {
         const { FilesetResolver, HandLandmarker } = await import("@mediapipe/tasks-vision");
@@ -1382,11 +1118,12 @@ export function GestureCameraExperience() {
         });
       }
 
-      setStatus("Waiting for camera permission...");
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          width: { ideal: 960 },
+          width: { ideal: 1280 },
           height: { ideal: 720 },
+          aspectRatio: { ideal: 16 / 9 },
+          frameRate: { ideal: 30, max: 30 },
           facingMode: "user",
         },
         audio: false,
@@ -1399,13 +1136,17 @@ export function GestureCameraExperience() {
         await videoRef.current.play();
       }
 
+      trackedHandsRef.current = [];
+      lastDetectionAtRef.current = 0;
+      if (canvasRef.current) {
+        syncCanvasSize(canvasRef.current, videoRef.current, canvasSizeRef.current);
+      }
+
       isRunningRef.current = true;
       setIsRunning(true);
-      setStatus("Camera is on. Point one index finger to start charging the red orb.");
       animationFrameRef.current = requestAnimationFrame(runDetection);
     } catch (error) {
       console.error(error);
-      setStatus("Camera could not start. Check browser permissions and try again.");
       stopCamera();
     } finally {
       setIsLoading(false);
@@ -1416,6 +1157,14 @@ export function GestureCameraExperience() {
   useEffect(() => {
     return () => disposeCameraResources();
   }, [disposeCameraResources]);
+
+  useEffect(() => {
+    return () => {
+      if (parallaxFrameRef.current != null) {
+        cancelAnimationFrame(parallaxFrameRef.current);
+      }
+    };
+  }, []);
 
   const guide = getRitualGuide(ritualPhase, ritualProgress);
 
@@ -1441,6 +1190,10 @@ export function GestureCameraExperience() {
       ? "Red orb — charge"
       : "Blue orb — charge";
 
+  const powerBarTone = ritualPhase === "blue_charging" ? "blue" : "red";
+  const powerBarPercent = Math.round(ritualProgress * 100);
+  const isWorldReleased = ritualPhase === "exploded";
+
   const phaseChipTop =
     isRunning && ritualPhase !== "idle" && showPowerBar
       ? "top-[4.25rem] sm:top-[4.5rem]"
@@ -1449,40 +1202,98 @@ export function GestureCameraExperience() {
   /* clamp + non-negative calc: short viewports used to make min(28vh, 100svh-200px)
      negative/tiny; inner layer is h-full with only abs children → 0px tall → blank UI */
   const experienceFrameStyle = {
-    height: "min(650px, max(320px, 65svh))",
-    minHeight: 320,
-    maxHeight: 650,
+    height: "min(545px, max(300px, calc(100svh - 345px)))",
+    minHeight: 300,
+    maxHeight: 560,
     width: "100%",
   } as const;
 
   return (
     <div
-      className="gesture-camera-root relative w-full pb-2 text-white"
-      style={{ color: "#ffffff" }}
+      ref={rootRef}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+      className={`gesture-camera-root relative h-svh w-full overflow-hidden text-[#F5F7FF] ${
+        isWorldReleased ? "limitless-release" : ""
+      }`}
+      style={{
+        color: "#F5F7FF",
+        fontFamily: '"Space Grotesk", "Satoshi", "General Sans", Inter, system-ui, sans-serif',
+        "--void-x": "0",
+        "--void-y": "0",
+      } as CSSProperties}
     >
-      <div className="flex flex-col gap-[20px] px-4">
-        <section className="relative z-10 pt-16 md:pt-20">
-          <div className="container-main">
-            <h1 className="text-center text-lg font-bold !leading-none tracking-[-0.035em] !text-white sm:text-xl md:text-left md:text-2xl lg:text-3xl xl:text-[2.15rem] md:whitespace-nowrap">
-              Turning Anime Into UX
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0 bg-[#02030A]" />
+      <div
+        aria-hidden
+        className="limitless-layer limitless-stars pointer-events-none absolute inset-0 z-0 will-change-transform"
+        style={{ transform: "translate3d(calc(var(--void-x) * -10px), calc(var(--void-y) * -8px), 0)" }}
+      />
+      <div
+        aria-hidden
+        className="limitless-layer limitless-nebula pointer-events-none absolute inset-[-8%] z-0 will-change-transform"
+        style={{ transform: "translate3d(calc(var(--void-x) * 8px), calc(var(--void-y) * 6px), 0)" }}
+      />
+      <div
+        aria-hidden
+        className="limitless-layer limitless-clouds pointer-events-none absolute inset-[-12%] z-0 will-change-transform"
+        style={{ transform: "translate3d(calc(var(--void-x) * 12px), calc(var(--void-y) * 10px), 0)" }}
+      />
+      <div
+        aria-hidden
+        className="limitless-layer limitless-particles pointer-events-none absolute inset-0 z-0 will-change-transform"
+        style={{ transform: "translate3d(calc(var(--void-x) * -18px), calc(var(--void-y) * -14px), 0)" }}
+      />
+      <div aria-hidden className="limitless-layer limitless-vignette pointer-events-none absolute inset-0 z-0" />
+
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-[1240px] flex-col px-4 pb-3 pt-[6.2rem] sm:px-6 sm:pb-4 md:pt-[6.35rem]">
+        <section className="relative z-10 h-[129px] shrink-0 text-center">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-44 w-[min(70vw,680px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(77,163,255,0.12),rgba(155,92,255,0.08)_42%,transparent_72%)] blur-[120px] opacity-[0.17]" />
+          <div className="relative mx-auto max-w-[920px]">
+            <div className="mb-1.5 flex items-center justify-center gap-3 text-[9px] font-black uppercase leading-none tracking-[0.34em] text-[#9AA4C7]">
+              <span className="h-px w-9 bg-gradient-to-r from-transparent via-[#4DA3FF] to-[#9B5CFF]" />
+              <span>Domain Expansion</span>
+              <span className="font-mono tracking-[0.22em] text-[#5F698A]">領域展開</span>
+              <span className="h-px w-9 bg-gradient-to-r from-[#9B5CFF] via-[#4DA3FF] to-transparent" />
+            </div>
+            <h1
+              aria-label="Turning Anime Into Interaction"
+              className="limitless-heading text-balance text-[48px] font-extrabold uppercase !leading-[0.9] tracking-[-0.05em] !text-[#F5F7FF]"
+            >
+              Turning Anime Into{" "}
+              <span className="inline-block bg-[linear-gradient(135deg,#4DA3FF_0%,#9B5CFF_100%)] bg-clip-text text-transparent">
+                Interaction
+              </span>
             </h1>
+            <p className="mx-auto mt-2 max-w-[660px] text-[16px] leading-5 !text-[#9AA4C7]">
+              Hand tracking transforms gestures into cursed energy interactions inspired by Hollow Purple.
+            </p>
           </div>
+          <div aria-hidden className="pointer-events-none mx-auto mt-2 h-[54px] w-px bg-gradient-to-b from-[#4DA3FF]/[0.09] via-[#9B5CFF]/[0.07] to-transparent" />
         </section>
 
-        <section className="relative z-20 overflow-visible pb-4" aria-label="Camera experience">
-        <div className="container-main overflow-visible">
-          <div className="relative w-full overflow-visible pr-10 sm:pr-16">
+        <section className="relative z-20 mt-3 min-h-0 flex-1 overflow-visible" aria-label="Camera experience">
+        <div className="mx-auto h-full w-full max-w-[1120px] overflow-visible">
+          <div className="relative flex h-fit w-full items-center justify-center overflow-visible px-0 sm:px-10 lg:px-14">
             <div
-              className="relative isolate min-h-[320px] w-full overflow-hidden rounded-2xl border-2 border-fuchsia-500/40 bg-black shadow-[0_24px_80px_rgba(0,0,0,0.75)]"
+              className="limitless-chamber group relative isolate min-h-[300px] w-full overflow-hidden rounded-[20px] bg-[rgba(8,10,20,0.55)] backdrop-blur-[14px] transition-transform duration-500 ease-out will-change-transform hover:scale-[1.006]"
               style={{
                 ...experienceFrameStyle,
-                boxShadow: `0 0 0 1px rgba(255,255,255,0.1) inset, 0 0 48px rgba(${phaseGlow}, 0.22), 0 24px 80px rgba(0,0,0,0.75)`,
+                boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.06), 0 0 46px rgba(77,163,255,0.08), 0 0 62px rgba(155,92,255,0.07)`,
               }}
             >
-            <div className="pointer-events-none absolute left-2 top-2 z-[5] h-6 w-6 border-l border-t border-white/25" />
-            <div className="pointer-events-none absolute right-2 top-2 z-[5] h-6 w-6 border-r border-t border-white/25" />
-            <div className="pointer-events-none absolute bottom-2 left-2 z-[5] h-6 w-6 border-b border-l border-white/18" />
-            <div className="pointer-events-none absolute bottom-2 right-2 z-[5] h-6 w-6 border-b border-r border-white/18" />
+            <div className="pointer-events-none absolute -inset-16 z-[3] bg-[radial-gradient(circle_at_12%_50%,rgba(77,163,255,0.08),transparent_36%),radial-gradient(circle_at_88%_46%,rgba(155,92,255,0.08),transparent_38%)]" />
+            <div className="pointer-events-none absolute inset-0 z-[4] bg-[radial-gradient(circle_at_50%_42%,transparent_0%,transparent_46%,rgba(77,163,255,0.045)_76%,rgba(155,92,255,0.045)_100%)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-[4] h-14 bg-gradient-to-b from-[#F5F7FF]/[0.032] to-transparent" />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 z-[4] opacity-[0.035]"
+              style={{
+                backgroundImage:
+                  "linear-gradient(0deg, rgba(154,164,199,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(154,164,199,0.8) 1px, transparent 1px)",
+                backgroundSize: "42px 42px",
+              }}
+            />
 
             {isRunning && (
               <button
@@ -1499,45 +1310,70 @@ export function GestureCameraExperience() {
             <div className="absolute inset-0 min-h-0 w-full bg-neutral-950">
               <video
                 ref={videoRef}
-                className="absolute inset-0 h-full w-full scale-x-[-1] object-cover"
+                className="camera-feed-cinematic absolute inset-0 h-full w-full scale-x-[-1] object-cover"
                 muted
                 playsInline
               />
               <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+              <div aria-hidden className="film-grain pointer-events-none absolute inset-0 z-[2] opacity-[0.055]" />
+              <div aria-hidden className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_50%_45%,transparent_0%,transparent_58%,rgba(77,163,255,0.045)_100%)] mix-blend-screen" />
 
               {/* Game-style power bar — boot + red/blue charge */}
               {showPowerBar && (
                 <div
-                  className={`pointer-events-none absolute left-3 top-3 z-30 ${isRunning ? "right-16 sm:right-20" : "right-3"}`}
+                  className={`pointer-events-none absolute left-3 top-3 z-30 ${isRunning ? "right-[4.85rem] sm:right-[5.65rem]" : "right-3"}`}
                 >
-                  <div className="mb-1.5 flex items-end justify-between gap-2">
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/45">
+                  <div className="mb-2 flex items-end justify-between gap-2">
+                    <span className="inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.22em] text-white/60">
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full shadow-[0_0_12px_currentColor] ${
+                          isLoading
+                            ? "bg-fuchsia-300 text-fuchsia-300"
+                            : powerBarTone === "red"
+                              ? "bg-rose-300 text-rose-300"
+                              : "bg-sky-300 text-sky-300"
+                        }`}
+                      />
                       {powerBarLabel}
                     </span>
                     {!isLoading && (
-                      <span className="font-mono text-[10px] tabular-nums text-white/50">
-                        {Math.round(ritualProgress * 100)}%
+                      <span className="font-mono text-[10px] tabular-nums text-white/60">
+                        {powerBarPercent}%
                       </span>
                     )}
                   </div>
                   <div
-                    className="relative h-3 overflow-hidden rounded-sm border border-white/10 bg-black/70"
+                    className="relative h-4 overflow-hidden rounded-sm border border-white/15 bg-black/75 shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
                     style={{
-                      backgroundImage:
-                        "repeating-linear-gradient(90deg, transparent, transparent 7px, rgba(255,255,255,0.04) 7px, rgba(255,255,255,0.04) 8px)",
+                      boxShadow: `0 0 22px rgba(${phaseGlow}, 0.16), 0 0 0 1px rgba(255,255,255,0.04) inset`,
                     }}
                   >
                     {isLoading ? (
-                      <div className="absolute inset-y-0 left-0 w-[38%] rounded-sm bg-gradient-to-r from-fuchsia-900 via-fuchsia-400 to-fuchsia-900 opacity-90 animate-ritual-boot-sweep" />
+                      <>
+                        <div className="absolute inset-0 bg-white/[0.04]" />
+                        <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-fuchsia-300 to-transparent opacity-95 animate-ritual-boot-sweep" />
+                      </>
                     ) : (
-                      <div
-                        className={`h-full rounded-sm transition-[width] duration-150 ease-linear ${
-                          ritualPhase === "red_charging"
-                            ? "bg-gradient-to-r from-rose-900 via-rose-500 to-orange-400 shadow-[0_0_14px_rgba(239,68,68,0.65)]"
-                            : "bg-gradient-to-r from-sky-900 via-sky-400 to-cyan-300 shadow-[0_0_14px_rgba(56,189,248,0.65)]"
-                        }`}
-                        style={{ width: `${ritualProgress * 100}%` }}
-                      />
+                      <>
+                        <div
+                          className={`absolute inset-y-0 left-0 w-full origin-left transition-transform duration-75 ease-linear ${
+                            powerBarTone === "red"
+                              ? "bg-gradient-to-r from-rose-700 via-rose-400 to-orange-300 shadow-[0_0_14px_rgba(239,68,68,0.65)]"
+                              : "bg-gradient-to-r from-sky-700 via-sky-400 to-cyan-200 shadow-[0_0_14px_rgba(56,189,248,0.65)]"
+                          }`}
+                          style={{ transform: `scaleX(${ritualProgress})` }}
+                        />
+                        <div
+                          aria-hidden
+                          className="absolute inset-0 opacity-45"
+                          style={{
+                            backgroundImage:
+                              "linear-gradient(90deg, rgba(255,255,255,0.18) 0 1px, transparent 1px)",
+                            backgroundSize: "14.285% 100%",
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/14 to-transparent animate-ritual-cell-spark opacity-45" />
+                      </>
                     )}
                   </div>
                 </div>
@@ -1562,18 +1398,18 @@ export function GestureCameraExperience() {
               )}
 
               {!isRunning && (
-                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/78 !text-white text-white backdrop-blur-sm">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-fuchsia-500/25 bg-fuchsia-950/35">
-                    <Camera className="h-8 w-8 text-fuchsia-400/55" />
+                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#02030A]/72 !text-[#F5F7FF] text-[#F5F7FF] backdrop-blur-[2px]">
+                  <div className="mb-5 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-[1rem] border border-[#9B5CFF]/30 bg-[rgba(10,12,28,0.72)] shadow-[0_0_34px_rgba(155,92,255,0.24)]">
+                    <Camera className="h-8 w-8 text-[#9AA4C7]" />
                   </div>
-                  <h3 className="mb-2 text-lg font-bold !text-white tracking-[-0.02em]">Hollow Purple Move</h3>
-                  <p className="mb-6 max-w-[300px] px-4 text-center text-[12px] leading-relaxed !text-white/70">
+                  <h3 className="mb-2 text-lg font-black uppercase !text-[#F5F7FF] tracking-normal">Hollow Purple Move</h3>
+                  <p className="mb-6 max-w-[360px] px-4 text-center text-[12px] leading-relaxed !text-[#9AA4C7]">
                     Camera runs entirely in your browser. Hand tracking never leaves your device.
                   </p>
                   <button
                     onClick={startCamera}
                     disabled={isLoading}
-                    className="inline-flex items-center gap-2 rounded-full bg-fuchsia-500 px-6 py-2.5 text-[13px] font-bold text-white shadow-lg transition-colors hover:bg-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#4DA3FF_0%,#9B5CFF_55%,#C86BFF_100%)] px-6 py-2.5 text-[13px] font-black text-[#F5F7FF] shadow-[0_14px_34px_rgba(155,92,255,0.32)] transition-transform duration-300 hover:scale-[1.025] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Camera className="h-4 w-4" />
                     {isLoading ? "Starting…" : "Start camera"}
@@ -1582,31 +1418,31 @@ export function GestureCameraExperience() {
               )}
 
               {/* Combined ritual strip — always visible; sits above idle overlay */}
-              <div className="pointer-events-none absolute bottom-2 left-1/2 z-[60] w-[calc(100%-0.75rem)] max-w-[920px] -translate-x-1/2 px-0.5 sm:bottom-3">
-                <div className="mx-auto flex items-stretch justify-center gap-0.5 overflow-x-auto rounded-2xl border border-white/18 bg-black/85 px-1.5 py-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.65)] backdrop-blur-xl sm:gap-1 sm:rounded-full sm:px-3 sm:py-2">
+              <div className="pointer-events-none absolute bottom-2 left-1/2 z-[60] w-[calc(100%-0.85rem)] max-w-[760px] -translate-x-1/2 px-0.5 sm:bottom-3">
+                <div className="mx-auto flex items-stretch justify-center gap-1 overflow-x-auto rounded-[14px] border border-white/[0.06] bg-[rgba(15,18,30,0.45)] px-1.5 py-1 shadow-none backdrop-blur-[18px] sm:gap-1.5 sm:px-2 sm:py-1">
                   {RITUAL_STEPS_STATIC.map((step, i) => {
                     const isStepActive = isRunning && i === activePillIndex;
                     const isIdleHint = !isRunning && i === 0;
                     return (
                       <div
                         key={step.label}
-                        className={`flex min-w-0 shrink-0 items-center gap-1.5 rounded-full px-1 py-0.5 transition-all duration-300 sm:gap-2 sm:px-2 sm:py-1 ${
+                        className={`flex min-w-0 shrink-0 items-center gap-1.5 px-1 py-0.5 transition-all duration-300 ease-out sm:gap-2 sm:px-2 ${
                           isStepActive
-                            ? "bg-fuchsia-500/20 ring-1 ring-fuchsia-400/50"
+                            ? "scale-[1.05]"
                             : isIdleHint
-                              ? "bg-white/10 ring-1 ring-white/30"
+                              ? "opacity-80"
                               : isRunning
-                                ? "opacity-45"
-                                : "opacity-65"
+                                ? "opacity-35"
+                                : "opacity-55"
                         }`}
                       >
                         <div
-                          className={`relative h-8 w-8 shrink-0 overflow-hidden rounded-full border-2 sm:h-9 sm:w-9 ${
+                          className={`relative h-6 w-6 shrink-0 overflow-hidden rounded-full border sm:h-7 sm:w-7 ${
                             isStepActive
-                              ? "border-fuchsia-400 shadow-[0_0_14px_rgba(217,70,239,0.45)]"
+                              ? "border-[#C86BFF]/80 shadow-[0_0_16px_rgba(155,92,255,0.32)] ring-1 ring-[#4DA3FF]/25"
                               : isIdleHint
-                                ? "border-white/35"
-                                : "border-white/15"
+                                ? "border-[#F5F7FF]/22"
+                                : "border-[#F5F7FF]/10"
                           }`}
                         >
                           {step.stickerSrc ? (
@@ -1620,11 +1456,11 @@ export function GestureCameraExperience() {
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center bg-white/10">
-                              <Camera className="h-4 w-4 text-white/75" />
+                              <Camera className="h-3.5 w-3.5 text-[#9AA4C7]" />
                             </div>
                           )}
                         </div>
-                        <span className="max-w-[56px] truncate text-[8px] font-medium leading-tight text-white/90 sm:max-w-[76px] sm:text-[10px]">
+                        <span className="max-w-[52px] truncate text-[7px] font-semibold leading-tight text-[#F5F7FF]/76 sm:max-w-[72px] sm:text-[9px]">
                           {step.label}
                         </span>
                       </div>
@@ -1636,9 +1472,10 @@ export function GestureCameraExperience() {
           </div>
 
             {/* Reference clip — small titled rectangle; outside frame clip, straddles top-right corner */}
-            <div className="pointer-events-none absolute -right-2 -top-3 z-[70] w-[min(40vw,200px)] max-w-[200px] rotate-[7deg] overflow-hidden rounded-xl border border-white/25 bg-black/60 shadow-[0_20px_50px_rgba(0,0,0,0.65)] backdrop-blur-md sm:-right-4 sm:-top-2 sm:max-w-[220px] sm:rotate-[6deg]">
-              <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-black/35 to-transparent" />
-              <span className="absolute left-2 top-2 z-[2] text-[7px] font-bold uppercase tracking-[0.2em] text-white/45">
+            <div className="hologram-card pointer-events-none absolute -right-1 top-2 z-[70] w-[min(38vw,190px)] max-w-[190px] rotate-[6deg] overflow-hidden rounded-[0.85rem] border border-[#F5F7FF]/16 bg-[rgba(10,12,28,0.55)] shadow-[0_20px_54px_rgba(0,0,0,0.5)] backdrop-blur-md sm:-right-3 sm:-top-1 sm:max-w-[210px] sm:rotate-[5deg] lg:-right-2">
+              <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#02030A]/38 to-transparent" />
+              <div className="pointer-events-none absolute inset-0 z-[2] border border-[#4DA3FF]/10" />
+              <span className="absolute left-2 top-2 z-[3] text-[7px] font-black uppercase tracking-[0.26em] text-[#9AA4C7]/70">
                 Ref
               </span>
               <video

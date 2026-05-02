@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ChevronDown, X } from "lucide-react";
+import { ViewportVideo } from "@/components/ui/viewport-video";
 import {
   DraggableContainer,
   GridBody,
@@ -80,38 +81,58 @@ const CASE_STUDIES = [
 
 const PERSONAL_PROJECTS = [
   {
-    id: "gesture-camera",
-    label: "Camera Interaction",
-    title: "Hand gesture controlled interface.",
-    description: "A webcam-based experiment where simple hand gestures trigger screen actions.",
+    id: "anime-motion",
+    tag: "Motion Interface",
+    title: "Gesture-controlled anime experience.",
+    description:
+      "An experimental interface inspired by anime sequences, where hand gestures trigger motion, effects, and on-screen interactions in real time.",
+    cta: "View project",
     href: "/personal-projects/gesture-camera",
     visual: "from-[#10233f] via-[#143f63] to-[#0a0a0a]",
+    video: "/personal-projects/gesture-anime-experience.mov",
   },
   {
-    id: "motion-playground",
-    label: "Motion Prototype",
-    title: "Micro-interaction playground.",
-    description: "Small interface moments focused on feedback, timing, and playful motion.",
-    href: "/personal-projects/motion-playground",
+    id: "portfolio-site",
+    tag: "Personal Website",
+    title: "This portfolio, built like a playground.",
+    description:
+      "A personal site where I experiment with motion, transitions, layout systems, and interaction details while documenting the things I love building.",
+    cta: "Coming soon",
+    href: "#",
     visual: "from-[#2b1748] via-[#5b2f69] to-[#0a0a0a]",
+    video: "/personal-projects/portfolio-site-cursorful.mp4",
   },
   {
-    id: "ai-interface",
-    label: "AI Experience",
-    title: "Simple assistant interface.",
-    description: "A lightweight concept for turning rough prompts into structured product flows.",
-    href: "/personal-projects/ai-interface",
+    id: "orbite-ai",
+    tag: "AI Concept",
+    title: "Orbite AI website concept.",
+    description:
+      "A vibe-coded AI web experience focused on fast prototyping, immersive visuals, and turning rough ideas into something interactive and real.",
+    cta: "Coming soon",
+    href: "#",
     visual: "from-[#18382d] via-[#25634f] to-[#0a0a0a]",
+    video: "/personal-projects/orbite-ai-cursorful.mp4",
   },
   {
-    id: "interface-lab",
-    label: "Interface Lab",
-    title: "Design system sandbox.",
-    description: "Reusable interface patterns for testing layout, hierarchy, and interaction details.",
-    href: "/personal-projects/interface-lab",
+    id: "ar-cgi",
+    tag: "CGI & AR",
+    title: "Augmented reality and CGI experiments.",
+    description:
+      "A collection of visual experiments exploring CGI scenes, spatial interactions, mixed reality concepts, and immersive digital visuals.",
+    cta: "Coming soon",
+    href: "#",
     visual: "from-[#3b2818] via-[#7a4b2a] to-[#0a0a0a]",
+    video: "/personal-projects/ar-cgi-whatsapp.mp4",
   },
 ];
+
+/** Semi-transparent gradient over looping video (per card palette). */
+const PERSONAL_PROJECT_VIDEO_WASH: Record<string, string> = {
+  "anime-motion": "from-[#10233f]/50 via-[#143f63]/35 to-[#0a0a0a]/88",
+  "portfolio-site": "from-[#2b1748]/50 via-[#5b2f69]/35 to-[#0a0a0a]/88",
+  "orbite-ai": "from-[#18382d]/50 via-[#25634f]/35 to-[#0a0a0a]/88",
+  "ar-cgi": "from-[#3b2818]/50 via-[#7a4b2a]/35 to-[#0a0a0a]/88",
+};
 
 const OTHER_WORK_COLUMNS = [
   {
@@ -435,6 +456,8 @@ type CustomCursor = {
   y: number;
   visible: boolean;
   label: string | null;
+  /** Grey pill for "Coming soon" case studies; blue for normal CTAs */
+  tone: "accent" | "muted";
 };
 
 type HeroPointer = {
@@ -579,6 +602,7 @@ function HeroDotField({ pointerRef }: { pointerRef: RefObject<HeroPointer> }) {
 export default function Page() {
   const pathname = usePathname();
   const carouselRef = useRef<HTMLDivElement>(null);
+  const personalProjectsCarouselRef = useRef<HTMLDivElement>(null);
   const heroPointerRef = useRef<HeroPointer>({ x: 0, y: 0, active: false, lastMovedAt: 0 });
   const [activeAudience, setActiveAudience] = useState("anyone");
   const [showIntro, setShowIntro] = useState(!hasShownHomeIntroThisVisit);
@@ -588,6 +612,7 @@ export default function Page() {
     y: 0,
     visible: false,
     label: null,
+    tone: "accent",
   });
 
   useEffect(() => {
@@ -678,6 +703,15 @@ export default function Page() {
     });
   };
 
+  const scrollPersonalProjects = (direction: "left" | "right") => {
+    if (!personalProjectsCarouselRef.current) return;
+    const scrollAmount = 320;
+    personalProjectsCarouselRef.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
   const scrollToWork = () => {
     if (typeof window !== "undefined" && window.location.hash !== "#work") {
       window.history.pushState(null, "", "/#work");
@@ -704,86 +738,24 @@ export default function Page() {
   };
 
   const setCaseStudyCursor = (label: string | null) => {
-    setCustomCursor((cursor) => ({ ...cursor, label }));
+    setCustomCursor((cursor) => ({
+      ...cursor,
+      label,
+      tone: label === "Coming soon" ? "muted" : "accent",
+    }));
   };
-
-  const renderBentoCard = (
-    project: (typeof PERSONAL_PROJECTS)[number],
-    index: number,
-    blob: {
-      loop: { tl: number[]; tr: number[]; br: number[]; bl: number[] };
-      hover: { tl: number; tr: number; br: number; bl: number };
-    },
-    isStacked = false,
-  ) => (
-    <Link
-      key={project.id}
-      href={project.href}
-      className={`${isStacked ? "min-h-0 flex-1" : "min-w-0"} group`}
-    >
-      <motion.article
-        initial={{ opacity: 0, y: isStacked ? 24 : 48 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-50px" }}
-        animate={{
-          borderTopLeftRadius: blob.loop.tl,
-          borderTopRightRadius: blob.loop.tr,
-          borderBottomRightRadius: blob.loop.br,
-          borderBottomLeftRadius: blob.loop.bl,
-        }}
-        whileHover={{
-          borderTopLeftRadius: blob.hover.tl,
-          borderTopRightRadius: blob.hover.tr,
-          borderBottomRightRadius: blob.hover.br,
-          borderBottomLeftRadius: blob.hover.bl,
-          scale: 1.012,
-        }}
-        transition={{
-          opacity: { duration: 0.7, delay: index * 0.1, ease: [0.25, 0.1, 0.25, 1] },
-          y: { duration: 0.7, delay: index * 0.1, ease: [0.25, 0.1, 0.25, 1] },
-          borderTopLeftRadius: { duration: 7, repeat: Infinity, ease: "easeInOut" },
-          borderTopRightRadius: { duration: 7, repeat: Infinity, ease: "easeInOut" },
-          borderBottomRightRadius: { duration: 7, repeat: Infinity, ease: "easeInOut" },
-          borderBottomLeftRadius: { duration: 7, repeat: Infinity, ease: "easeInOut" },
-          scale: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] },
-        }}
-        className={`${isStacked ? "h-full" : "h-[540px] md:h-[580px]"} relative overflow-hidden bg-[#0a0a0a] shadow-sm`}
-      >
-        <div className={`absolute inset-0 bg-gradient-to-br ${project.visual}`} />
-        <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_24px_24px,rgba(255,255,255,0.22)_1px,transparent_1px)] [background-size:28px_28px]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-
-        <div className={`${isStacked ? "left-4 top-4" : "left-5 top-5"} absolute`}>
-          <span className="inline-flex w-fit rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-md">
-            {project.label}
-          </span>
-        </div>
-
-        <div className={`${isStacked ? "right-4 top-4 h-9 w-9" : "right-5 top-5 h-10 w-10"} absolute flex items-center justify-center rounded-full bg-white/10 opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:opacity-100`}>
-          <ChevronRight className={`${isStacked ? "h-4 w-4" : "h-5 w-5"} text-white`} />
-        </div>
-
-        <div className={`${isStacked ? "p-4" : "p-6"} absolute inset-x-0 bottom-0`}>
-          <h3 className={`${isStacked ? "text-[18px] md:text-[20px]" : "text-[20px] md:text-[24px]"} max-w-[280px] font-semibold leading-tight text-white`}>
-            {project.title}
-          </h3>
-          <p className={`${isStacked ? "mt-2 line-clamp-2 text-[13px]" : "mt-3 text-[14px]"} leading-relaxed text-white/65`}>
-            {project.description}
-          </p>
-          <span className={`${isStacked ? "mt-3 text-[12px]" : "mt-5 text-[13px]"} inline-flex items-center gap-2 font-medium text-white/80`}>
-            View project
-            <ChevronRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-          </span>
-        </div>
-      </motion.article>
-    </Link>
-  );
 
   return (
     <div className="custom-cursor-scope min-h-screen bg-[var(--bg)] text-[var(--text)] relative">
       <div
-        className={`pointer-events-none fixed left-0 top-0 z-[70] hidden -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#5367ff] text-center text-[11px] font-semibold uppercase leading-none tracking-[0.08em] text-white shadow-[0_18px_40px_rgba(83,103,255,0.28)] transition-[width,height,opacity,transform,border-radius] duration-200 ease-out md:flex ${
-          customCursor.label ? "h-10 w-[156px] whitespace-nowrap px-5" : "h-[22px] w-[22px]"
+        className={`pointer-events-none fixed left-0 top-0 z-[70] hidden -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-center text-[11px] font-semibold uppercase leading-none tracking-[0.08em] text-white transition-[width,height,opacity,transform,border-radius] duration-200 ease-out md:flex ${
+          customCursor.tone === "muted"
+            ? "bg-[#6b6b6b] shadow-[0_18px_40px_rgba(0,0,0,0.25)]"
+            : "bg-[#5367ff] shadow-[0_18px_40px_rgba(83,103,255,0.28)]"
+        } ${
+          customCursor.label
+            ? "h-10 min-h-10 w-max max-w-[min(260px,calc(100vw-40px))] whitespace-nowrap px-5"
+            : "h-[22px] w-[22px]"
         } ${customCursor.visible && !showExpandedWork ? "opacity-100" : "opacity-0"}`}
         style={{
           left: `${customCursor.x}px`,
@@ -946,13 +918,13 @@ export default function Page() {
                   className="relative h-[450px] md:h-[500px] rounded-2xl overflow-hidden bg-[#0a0a0a]"
                 >
                   {study.video ? (
-                    <video
+                    <ViewportVideo
                       className="absolute inset-0 w-full h-full object-cover"
                       src={study.video}
-                      autoPlay
                       muted
                       loop
                       playsInline
+                      preload="none"
                     />
                   ) : (
                     <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a]" />
@@ -997,47 +969,131 @@ export default function Page() {
         </div>
       </section>
 
-      <section className="section-gap">
+      <section id="personal-projects" className="section-gap scroll-mt-20">
         <div className="container-main">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-            className="mb-[var(--space-l)]"
           >
-            <div className="flex items-end justify-between gap-6">
+            <div className="flex items-end justify-between mb-[var(--space-l)]">
               <div>
-                <small className="label block mb-[var(--space-xxs)]">Personal Project</small>
-                <h2 className="h2">Experimental <span className="text-[var(--accent)]">Ideas.</span></h2>
-                <p className="body-text mt-[var(--space-xs)] max-w-[560px]">
-                  Small explorations I am building to test interaction ideas, motion, and emerging product experiences.
+                <small className="label block mb-[var(--space-xxs)]">Stuff I build outside of work.</small>
+                <h2 className="h2">
+                  Personal <span className="text-[var(--accent)]">Projects.</span>
+                </h2>
+                <p className="body-text mt-[var(--space-xs)] max-w-[640px]">
+                  A mix of experiments, interface studies, and late night ideas brought to life through motion, AI tools,
+                  code, and design. Some are polished, some are chaotic, but all of them helped me explore how digital
+                  experiences can feel more alive.
                 </p>
+              </div>
+              <div className="hidden md:flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => scrollPersonalProjects("left")}
+                  className="p-2 rounded-full border border-[var(--subtle)] hover:border-[var(--muted-text)] transition-colors"
+                  aria-label="Scroll personal projects left"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollPersonalProjects("right")}
+                  className="p-2 rounded-full border border-[var(--subtle)] hover:border-[var(--muted-text)] transition-colors"
+                  aria-label="Scroll personal projects right"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
             </div>
           </motion.div>
+        </div>
 
-          <div className="grid gap-3 md:grid-cols-[1fr_0.84fr_1fr]">
-            {renderBentoCard(PERSONAL_PROJECTS[0], 0, {
-              loop: { tl: [28,48,20,28], tr: [28,16,44,28], br: [28,44,16,28], bl: [28,20,48,28] },
-              hover: { tl: 54, tr: 16, br: 54, bl: 16 },
-            })}
+        <div ref={personalProjectsCarouselRef} className="overflow-x-auto overflow-y-hidden scrollbar-hide">
+          <div className="flex gap-5 px-[max(24px,calc((100vw-var(--container-max))/2+24px))] pb-2">
+            {PERSONAL_PROJECTS.map((project, index) => (
+              <Link
+                key={project.id}
+                href={project.href}
+                onClick={(event) => {
+                  if (project.href === "#") {
+                    event.preventDefault();
+                  }
+                }}
+                onPointerEnter={() =>
+                  setCaseStudyCursor(project.href === "#" ? "Coming soon" : project.cta)
+                }
+                onPointerLeave={() => setCaseStudyCursor(null)}
+                className="group flex-shrink-0 w-[320px] cursor-none md:w-[380px]"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.7, delay: index * 0.12, ease: [0.25, 0.1, 0.25, 1] }}
+                  className="relative h-[450px] md:h-[500px] rounded-2xl overflow-hidden bg-[#0a0a0a]"
+                >
+                  {"video" in project && project.video ? (
+                    <video
+                      className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+                      src={project.video}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                      aria-hidden
+                    />
+                  ) : null}
+                  <div
+                    className={`absolute inset-0 z-[1] bg-gradient-to-br ${
+                      "video" in project && project.video
+                        ? PERSONAL_PROJECT_VIDEO_WASH[project.id] ??
+                          "from-[#10233f]/50 via-[#143f63]/35 to-[#0a0a0a]/88"
+                        : project.visual
+                    }`}
+                  />
+                  <div className="absolute inset-0 z-[1] opacity-30 [background-image:radial-gradient(circle_at_24px_24px,rgba(255,255,255,0.22)_1px,transparent_1px)] [background-size:28px_28px]" />
+                  <div className="absolute inset-0 z-[1] bg-gradient-to-t from-black/92 via-black/45 to-transparent" />
 
-            <div className="flex h-[540px] min-w-0 flex-col gap-3 md:h-[580px]">
-              {renderBentoCard(PERSONAL_PROJECTS[1], 1, {
-                loop: { tl: [24,40,24,40], tr: [40,24,40,24], br: [24,40,24,40], bl: [40,24,40,24] },
-                hover: { tl: 16, tr: 52, br: 16, bl: 52 },
-              }, true)}
-              {renderBentoCard(PERSONAL_PROJECTS[2], 2, {
-                loop: { tl: [40,24,40,24], tr: [24,40,24,40], br: [40,24,40,24], bl: [24,40,24,40] },
-                hover: { tl: 52, tr: 16, br: 52, bl: 16 },
-              }, true)}
-            </div>
+                  <div className="absolute top-5 left-5 z-[2]">
+                    <span className="inline-flex w-fit rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-md">
+                      {project.tag}
+                    </span>
+                  </div>
 
-            {renderBentoCard(PERSONAL_PROJECTS[3], 3, {
-              loop: { tl: [28,20,44,28], tr: [28,48,20,28], br: [28,16,48,28], bl: [28,44,16,28] },
-              hover: { tl: 16, tr: 54, br: 16, bl: 54 },
-            })}
+                  {project.href !== "#" && (
+                    <div className="absolute top-5 right-5 z-[2] flex h-10 w-10 items-center justify-center rounded-full bg-white/10 opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:opacity-100">
+                      <ChevronRight className="h-5 w-5 text-white" />
+                    </div>
+                  )}
+
+                  <div className="absolute bottom-0 left-0 right-0 z-[2] flex flex-col justify-end">
+                    <div className="relative px-6 pb-6 pt-20 md:pt-24">
+                      <div
+                        className="pointer-events-none absolute inset-0 rounded-b-2xl bg-gradient-to-t from-[#000000]/90 to-[#000000]/0 opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
+                        aria-hidden
+                      />
+                      <div className="relative">
+                        <h3 className="text-[20px] md:text-[24px] font-semibold text-white leading-tight max-w-[300px] drop-shadow-[0_1px_12px_rgba(0,0,0,0.45)]">
+                          {project.title}
+                        </h3>
+                        {project.href === "#" && (
+                          <span className="mt-2 block text-[13px] text-white/80 md:text-[14px]">
+                            Coming soon
+                          </span>
+                        )}
+                        <p className="mt-0 max-h-0 max-w-[320px] overflow-hidden text-[13px] leading-relaxed text-white opacity-0 transition-[max-height,opacity,margin] duration-300 ease-out group-hover:mt-3 group-hover:max-h-[220px] group-hover:overflow-y-auto group-hover:opacity-100 md:text-[14px]">
+                          {project.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -1095,13 +1151,13 @@ export default function Page() {
                         className="group relative aspect-video overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-[0_6px_24px_rgba(0,0,0,0.05)]"
                       >
                         {item.mediaType === "video" ? (
-                          <video
+                          <ViewportVideo
                             src={item.src}
                             className="pointer-events-none absolute inset-0 h-full w-full bg-white object-cover"
-                            autoPlay
                             muted
                             loop
                             playsInline
+                            preload="none"
                             aria-label={item.alt}
                           />
                         ) : (
@@ -1164,13 +1220,13 @@ export default function Page() {
                     className="group relative aspect-video h-auto w-[340px] md:w-[560px]"
                   >
                     {image.mediaType === "video" ? (
-                      <video
+                      <ViewportVideo
                         src={image.src}
                         className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-                        autoPlay
                         muted
                         loop
                         playsInline
+                        preload="none"
                         aria-label={image.alt}
                       />
                     ) : (

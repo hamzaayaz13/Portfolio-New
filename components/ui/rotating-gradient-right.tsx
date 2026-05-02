@@ -7,6 +7,7 @@ import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { ViewportVideo } from "@/components/ui/viewport-video";
 
 type Section = {
   title: string;
@@ -141,9 +142,9 @@ export default function RotatingGradientRight({
                 <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 
                 {section.videoSrc ? (
-                  <video
+                  <ViewportVideo
                     src={activeSection === index ? section.videoSrc : ""}
-                    autoPlay={activeSection === index}
+                    active={activeSection === index && isInView}
                     loop
                     muted
                     playsInline

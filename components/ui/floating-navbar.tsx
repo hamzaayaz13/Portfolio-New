@@ -51,6 +51,7 @@ export const FloatingNav = ({
   }, [readHash]);
 
   const isCaseStudy = pathname?.startsWith("/case-studies") ?? false;
+  const isGestureCamera = pathname === "/personal-projects/gesture-camera";
   const isHome = pathname === "/";
   const isContact = pathname === "/contact";
   const isWorkHash = isHome && hash === "#work";
@@ -87,20 +88,32 @@ export const FloatingNav = ({
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
-      className="fixed top-[var(--space-s)] inset-x-0 z-[99999] mx-auto flex w-fit flex-col items-end"
+      className={`fixed inset-x-0 z-[99999] mx-auto flex w-fit flex-col items-end ${
+        isGestureCamera ? "top-6" : "top-[var(--space-s)]"
+      }`}
     >
-      <nav className="flex max-w-fit items-center gap-0.5 rounded-full border border-[var(--subtle)] bg-white/80 px-1 py-1 shadow-[0_10px_30px_rgba(11,11,11,0.06)] backdrop-blur-md">
+      <nav
+        className={
+          isGestureCamera
+            ? "flex max-w-fit items-center gap-8 bg-transparent px-0 py-0"
+            : "flex max-w-fit items-center gap-0.5 rounded-full border border-[var(--subtle)] bg-white/80 px-1 py-1 shadow-[0_10px_30px_rgba(11,11,11,0.06)] backdrop-blur-md"
+        }
+      >
         {navItems.map((navItem, idx) => (
           <Link
             key={`link-${idx}`}
             href={navItem.link}
             scroll={isWorkLink(navItem.link) ? false : true}
             onClick={(e) => handleLinkClick(e, navItem.link)}
-            className={`px-4 py-2 rounded-full text-[14px] font-medium transition-colors ${
-              isActive(navItem.name)
-                ? "text-[var(--text)] bg-[var(--muted-bg)]"
-                : "text-[var(--muted-text)] hover:text-[var(--text)] hover:bg-[var(--muted-bg)]/80"
-            }`}
+            className={
+              isGestureCamera
+                ? "text-[12px] font-semibold uppercase tracking-[0.24em] text-white/65 transition-all duration-[250ms] hover:text-white hover:[text-shadow:0_0_16px_rgba(77,163,255,0.35)]"
+                : `px-4 py-2 rounded-full text-[14px] font-medium transition-colors ${
+                    isActive(navItem.name)
+                      ? "text-[var(--text)] bg-[var(--muted-bg)]"
+                      : "text-[var(--muted-text)] hover:text-[var(--text)] hover:bg-[var(--muted-bg)]/80"
+                  }`
+            }
             aria-current={isActive(navItem.name) ? "page" : undefined}
           >
             {navItem.name}
@@ -110,13 +123,17 @@ export const FloatingNav = ({
           href="/Resume/Hamza%20Ayaz%20-%20CV(R)%20.pdf"
           target="_blank"
           rel="noopener noreferrer"
-          className="ml-0.5 px-4 py-2 rounded-full text-[14px] font-medium border border-[var(--text)] text-[var(--text)] hover:bg-[var(--text)] hover:text-white transition-colors"
+          className={
+            isGestureCamera
+              ? "text-[12px] font-semibold uppercase tracking-[0.24em] text-white/65 transition-all duration-[250ms] hover:text-white hover:[text-shadow:0_0_16px_rgba(77,163,255,0.35)]"
+              : "ml-0.5 px-4 py-2 rounded-full text-[14px] font-medium border border-[var(--text)] text-[var(--text)] hover:bg-[var(--text)] hover:text-white transition-colors"
+          }
         >
           Resume
         </a>
       </nav>
 
-      <div className="relative mr-5 flex h-16 flex-col items-center">
+      {!isGestureCamera && <div className="relative mr-5 flex h-16 flex-col items-center">
         <div className="relative h-5 w-8" aria-hidden>
           <span className="absolute left-2 top-0 h-6 w-px origin-top rotate-[-14deg] bg-[rgba(11,11,11,0.16)]" />
           <span className="absolute right-2 top-0 h-6 w-px origin-top rotate-[14deg] bg-[rgba(11,11,11,0.16)]" />
@@ -133,7 +150,7 @@ export const FloatingNav = ({
           </span>
           <span className="relative z-10">Vibe coded on Cursor</span>
         </a>
-      </div>
+      </div>}
     </motion.div>
   );
 };
