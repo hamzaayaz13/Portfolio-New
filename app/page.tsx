@@ -931,7 +931,8 @@ export default function Page() {
                       muted
                       loop
                       playsInline
-                      preload="none"
+                      preload="metadata"
+                      rootMargin="1000px 0px"
                     />
                   ) : (
                     <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a]" />
