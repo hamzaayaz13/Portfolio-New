@@ -280,6 +280,74 @@ function SplitCard({
   );
 }
 
+function MobileContactCards() {
+  return (
+    <section className="min-h-screen bg-black px-4 pb-16 pt-28 text-white md:hidden">
+      <div className="mx-auto flex w-full max-w-[420px] flex-col gap-4">
+        <div className="relative h-[420px] overflow-hidden rounded-[32px] border border-white/10 bg-[#101010] shadow-[0_28px_80px_rgba(0,0,0,0.45)]">
+          <Image
+            src="/Images/carforce/own-picture.jpeg"
+            alt="Hamza Ayaz"
+            fill
+            sizes="92vw"
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-transparent to-black/10" />
+          <div className="absolute bottom-5 left-5 rounded-full border border-white/20 bg-white/12 px-4 py-2 text-[12px] font-medium text-white backdrop-blur-xl">
+            Based in Dubai
+          </div>
+        </div>
+
+        <article className="rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_50%_0%,rgba(25,118,210,0.38),transparent_42%),linear-gradient(180deg,#171717,#060606)] p-6 shadow-[0_28px_80px_rgba(25,118,210,0.16)]">
+          <small className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8ecaff]">
+            About
+          </small>
+          <h1 className="mt-4 text-[38px] font-semibold leading-none tracking-[-0.04em] text-white">
+            Hamza Ayaz
+          </h1>
+          <p className="mt-5 max-w-none text-[15px] leading-relaxed text-white/68">
+            Product designer with experience across B2C, B2B, and enterprise SaaS. I shape clear product experiences that reduce friction and build trust.
+          </p>
+        </article>
+
+        <article className="rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#151515,#050505)] p-4 shadow-[0_28px_80px_rgba(0,0,0,0.45)]">
+          <small className="px-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45">
+            Contact
+          </small>
+          <h2 className="mt-3 px-2 text-[32px] font-semibold leading-none tracking-[-0.035em] text-white">
+            Start a conversation
+          </h2>
+          <div className="mt-6 space-y-3">
+            {ctas.map((cta) => (
+              <a
+                key={cta.title}
+                href={cta.href}
+                target={cta.href.startsWith("http") || cta.href.endsWith(".pdf") ? "_blank" : undefined}
+                rel={cta.href.startsWith("http") || cta.href.endsWith(".pdf") ? "noopener noreferrer" : undefined}
+                className="group flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.07] p-3.5 text-white backdrop-blur-xl transition-all duration-300 hover:border-white/25 hover:bg-white/[0.12]"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#8bc5ff]">
+                  <Icon path={cta.iconPath} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14px] font-semibold">{cta.title}</span>
+                  <span className="block break-words text-[12px] leading-snug text-white/48">
+                    {cta.subtitle}
+                  </span>
+                </span>
+                <span className="shrink-0 text-white/45 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-white">
+                  <ArrowIcon />
+                </span>
+              </a>
+            ))}
+          </div>
+        </article>
+      </div>
+    </section>
+  );
+}
+
 export default function ScrollRevealCards() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -304,7 +372,9 @@ export default function ScrollRevealCards() {
   const captionOpacity = useTransform(progress, [0, 0.32], [1, 0]);
 
   return (
-    <section ref={containerRef} className="relative bg-black text-white" style={{ height: `${CONTACT_SCROLL_HEIGHT_VH}vh` }}>
+    <>
+      <MobileContactCards />
+      <section ref={containerRef} className="relative hidden bg-black text-white md:block" style={{ height: `${CONTACT_SCROLL_HEIGHT_VH}vh` }}>
       <div className="sticky top-0 flex h-screen items-center justify-center overflow-hidden px-4 py-16">
         <motion.div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_52%,rgba(25,118,210,0.28),transparent_38%),linear-gradient(180deg,#050505,#000)]"
@@ -350,6 +420,7 @@ export default function ScrollRevealCards() {
           </motion.div>
         </div>
       </div>
-    </section>
+      </section>
+    </>
   );
 }
