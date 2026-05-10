@@ -1,17 +1,19 @@
 "use client";
 
-import { type PointerEvent, type RefObject, useCallback, useEffect, useRef, useState } from "react";
+import { type CSSProperties, type PointerEvent, type RefObject, useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, ChevronDown, X } from "lucide-react";
 import { ViewportVideo } from "@/components/ui/viewport-video";
-import {
-  DraggableContainer,
-  GridBody,
-  GridItem,
-} from "@/components/ui/infinite-drag-scroll";
+import type { ExpandedWorkGalleryItem } from "@/components/home/expanded-work-gallery";
+
+const ExpandedWorkGallery = dynamic(
+  () => import("@/components/home/expanded-work-gallery").then((mod) => mod.ExpandedWorkGallery),
+  { ssr: false }
+);
 
 let hasShownHomeIntroThisVisit = false;
 
@@ -374,14 +376,10 @@ const OTHER_WORK_IMAGES = [
   },
 ];
 
-type WorkWallItem = {
-  id: string;
+type WorkWallItem = ExpandedWorkGalleryItem & {
   title: string;
   type: string;
   metric: string;
-  alt: string;
-  src: string;
-  mediaType: "image" | "video";
 };
 
 function shuffleWorkWallItems(items: WorkWallItem[], seed: number): WorkWallItem[] {
@@ -452,8 +450,6 @@ const UNDUIT_WORK_MEDIA_BASE: WorkWallItem[] = [
 const UNDUIT_WORK_MEDIA = shuffleWorkWallItems(UNDUIT_WORK_MEDIA_BASE, 0x9e3779b9);
 
 type CustomCursor = {
-  x: number;
-  y: number;
   visible: boolean;
   label: string | null;
   /** Grey pill for "Coming soon" case studies; blue for normal CTAs */
@@ -603,13 +599,13 @@ export default function Page() {
   const pathname = usePathname();
   const carouselRef = useRef<HTMLDivElement>(null);
   const personalProjectsCarouselRef = useRef<HTMLDivElement>(null);
+  const customCursorRef = useRef<HTMLDivElement>(null);
+  const customCursorVisibleRef = useRef(false);
   const heroPointerRef = useRef<HeroPointer>({ x: 0, y: 0, active: false, lastMovedAt: 0 });
   const [activeAudience, setActiveAudience] = useState("anyone");
   const [showIntro, setShowIntro] = useState(!hasShownHomeIntroThisVisit);
   const [showExpandedWork, setShowExpandedWork] = useState(false);
   const [customCursor, setCustomCursor] = useState<CustomCursor>({
-    x: 0,
-    y: 0,
     visible: false,
     label: null,
     tone: "accent",
@@ -628,16 +624,25 @@ export default function Page() {
     const handlePointerMove = (event: globalThis.PointerEvent) => {
       if (event.pointerType !== "mouse") return;
 
-      setCustomCursor((cursor) => ({
-        ...cursor,
-        x: event.clientX,
-        y: event.clientY,
-        visible: true,
-      }));
+      const cursorElement = customCursorRef.current;
+      if (cursorElement) {
+        cursorElement.style.setProperty("--cursor-x", `${event.clientX}px`);
+        cursorElement.style.setProperty("--cursor-y", `${event.clientY}px`);
+      }
+
+      if (!customCursorVisibleRef.current) {
+        customCursorVisibleRef.current = true;
+        setCustomCursor((cursor) =>
+          cursor.visible ? cursor : { ...cursor, visible: true }
+        );
+      }
     };
 
     const handlePointerLeave = () => {
-      setCustomCursor((cursor) => ({ ...cursor, visible: false }));
+      customCursorVisibleRef.current = false;
+      setCustomCursor((cursor) =>
+        cursor.visible ? { ...cursor, visible: false } : cursor
+      );
     };
 
     window.addEventListener("pointermove", handlePointerMove);
@@ -748,7 +753,8 @@ export default function Page() {
   return (
     <div className="custom-cursor-scope min-h-screen bg-[var(--bg)] text-[var(--text)] relative">
       <div
-        className={`pointer-events-none fixed left-0 top-0 z-[70] hidden -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-center text-[11px] font-semibold uppercase leading-none tracking-[0.08em] text-white transition-[width,height,opacity,transform,border-radius] duration-200 ease-out md:flex ${
+        ref={customCursorRef}
+        className={`pointer-events-none fixed left-0 top-0 z-[70] hidden items-center justify-center rounded-full text-center text-[11px] font-semibold uppercase leading-none tracking-[0.08em] text-white transition-[width,height,opacity,border-radius] duration-200 ease-out md:flex ${
           customCursor.tone === "muted"
             ? "bg-[#6b6b6b] shadow-[0_18px_40px_rgba(0,0,0,0.25)]"
             : "bg-[#5367ff] shadow-[0_18px_40px_rgba(83,103,255,0.28)]"
@@ -758,9 +764,10 @@ export default function Page() {
             : "h-[22px] w-[22px]"
         } ${customCursor.visible && !showExpandedWork ? "opacity-100" : "opacity-0"}`}
         style={{
-          left: `${customCursor.x}px`,
-          top: `${customCursor.y}px`,
-        }}
+          "--cursor-x": "0px",
+          "--cursor-y": "0px",
+          transform: "translate3d(var(--cursor-x), var(--cursor-y), 0) translate(-50%, -50%)",
+        } as CSSProperties}
         aria-hidden="true"
       >
         {customCursor.label}
@@ -1036,14 +1043,13 @@ export default function Page() {
                   className="relative h-[450px] md:h-[500px] rounded-2xl overflow-hidden bg-[#0a0a0a]"
                 >
                   {"video" in project && project.video ? (
-                    <video
+                    <ViewportVideo
                       className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
                       src={project.video}
-                      autoPlay
                       muted
                       loop
                       playsInline
-                      preload="metadata"
+                      preload="none"
                       aria-hidden
                     />
                   ) : null}
@@ -1212,36 +1218,7 @@ export default function Page() {
               </button>
             </div>
 
-            <DraggableContainer variant="masonry">
-              <GridBody>
-                {UNDUIT_WORK_MEDIA.map((image) => (
-                  <GridItem
-                    key={image.id}
-                    className="group relative aspect-video h-auto w-[340px] md:w-[560px]"
-                  >
-                    {image.mediaType === "video" ? (
-                      <ViewportVideo
-                        src={image.src}
-                        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-                        muted
-                        loop
-                        playsInline
-                        preload="none"
-                        aria-label={image.alt}
-                      />
-                    ) : (
-                      <Image
-                        src={image.src}
-                        alt={image.alt}
-                        fill
-                        sizes="(min-width: 768px) 560px, 340px"
-                        className="pointer-events-none object-cover"
-                      />
-                    )}
-                  </GridItem>
-                ))}
-              </GridBody>
-            </DraggableContainer>
+            <ExpandedWorkGallery items={UNDUIT_WORK_MEDIA} />
           </div>
         </div>
       )}
