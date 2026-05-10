@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   motion,
   useScroll,
@@ -282,69 +283,84 @@ function SplitCard({
 
 function MobileContactCards() {
   return (
-    <section className="min-h-screen bg-black px-4 pb-16 pt-28 text-white md:hidden">
-      <div className="mx-auto flex w-full max-w-[420px] flex-col gap-4">
-        <div className="relative h-[420px] overflow-hidden rounded-[32px] border border-white/10 bg-[#101010] shadow-[0_28px_80px_rgba(0,0,0,0.45)]">
-          <Image
-            src="/Images/carforce/own-picture.jpeg"
-            alt="Hamza Ayaz"
-            fill
-            sizes="92vw"
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-transparent to-black/10" />
-          <div className="absolute bottom-5 left-5 rounded-full border border-white/20 bg-white/12 px-4 py-2 text-[12px] font-medium text-white backdrop-blur-xl">
-            Based in Dubai
-          </div>
+    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] md:hidden">
+      <section className="pt-[var(--space-xxl)] pb-[var(--space-xl)]">
+        <div className="container-main">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.25, 0.4, 0.25, 1] }}
+            className="max-w-[640px]"
+          >
+            <small className="label block mb-[var(--space-xxs)]">Contact</small>
+            <h1 className="h1 mb-[var(--space-xs)]">Let&apos;s connect.</h1>
+            <p className="body-text text-[19px]">
+              Have a project in mind or want to discuss design?
+            </p>
+          </motion.div>
         </div>
+      </section>
 
-        <article className="rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_50%_0%,rgba(25,118,210,0.38),transparent_42%),linear-gradient(180deg,#171717,#060606)] p-6 shadow-[0_28px_80px_rgba(25,118,210,0.16)]">
-          <small className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8ecaff]">
-            About
-          </small>
-          <h1 className="mt-4 text-[38px] font-semibold leading-none tracking-[-0.04em] text-white">
-            Hamza Ayaz
-          </h1>
-          <p className="mt-5 max-w-none text-[15px] leading-relaxed text-white/68">
-            Product designer with experience across B2C, B2B, and enterprise SaaS. I shape clear product experiences that reduce friction and build trust.
-          </p>
-        </article>
+      <section className="section-gap bg-[var(--muted-bg)]">
+        <div className="container-main">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, ease: [0.25, 0.4, 0.25, 1] }}
+          >
+            <div className="grid gap-[var(--space-l)] items-start">
+              <figure>
+                <div className="relative aspect-[4/5] max-w-[400px] overflow-hidden rounded-lg visual-shadow">
+                  <Image
+                    src="/Images/carforce/own-picture.jpeg"
+                    alt="Hamza Ayaz"
+                    fill
+                    sizes="92vw"
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+              </figure>
 
-        <article className="rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,#151515,#050505)] p-4 shadow-[0_28px_80px_rgba(0,0,0,0.45)]">
-          <small className="px-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45">
-            Contact
-          </small>
-          <h2 className="mt-3 px-2 text-[32px] font-semibold leading-none tracking-[-0.035em] text-white">
-            Start a conversation
-          </h2>
-          <div className="mt-6 space-y-3">
-            {ctas.map((cta) => (
-              <a
-                key={cta.title}
-                href={cta.href}
-                target={cta.href.startsWith("http") || cta.href.endsWith(".pdf") ? "_blank" : undefined}
-                rel={cta.href.startsWith("http") || cta.href.endsWith(".pdf") ? "noopener noreferrer" : undefined}
-                className="group flex min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.07] p-3.5 text-white backdrop-blur-xl transition-all duration-300 hover:border-white/25 hover:bg-white/[0.12]"
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#8bc5ff]">
-                  <Icon path={cta.iconPath} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-semibold">{cta.title}</span>
-                  <span className="block break-words text-[12px] leading-snug text-white/48">
-                    {cta.subtitle}
-                  </span>
-                </span>
-                <span className="shrink-0 text-white/45 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-white">
-                  <ArrowIcon />
-                </span>
-              </a>
-            ))}
-          </div>
-        </article>
-      </div>
-    </section>
+              <div className="max-w-[400px]">
+                <small className="label block mb-[var(--space-xxs)]">About</small>
+                <h2 className="h2 mb-[var(--space-xs)]">Hamza Ayaz</h2>
+                <p className="body-text mb-[var(--space-s)]">
+                  Product Designer at Dubizzle Group with experience across B2C, B2B, and enterprise SaaS. I focus on reducing friction and building experiences that earn trust.
+                </p>
+                <p className="body-text mb-[var(--space-l)] text-[15px]">
+                  Based in Dubai. Available for remote and on-site.
+                </p>
+
+                <div className="space-y-[var(--space-xs)]">
+                  {ctas.map((cta) => (
+                    <a
+                      key={cta.title}
+                      href={cta.href}
+                      target={cta.href.startsWith("http") || cta.href.endsWith(".pdf") ? "_blank" : undefined}
+                      rel={cta.href.startsWith("http") || cta.href.endsWith(".pdf") ? "noopener noreferrer" : undefined}
+                      className="block rounded border border-[var(--subtle)] p-[var(--space-s)] transition-colors hover:border-[var(--muted-text)]"
+                    >
+                      <p className="text-[15px] font-medium text-[var(--text)]">{cta.title}</p>
+                      <p className="break-words text-[14px] text-[var(--muted-text)]">{cta.subtitle}</p>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      <nav className="border-t border-[var(--subtle)] py-[var(--space-m)]">
+        <div className="container-main">
+          <Link href="/" className="text-[15px] text-[var(--accent)] hover:underline">
+            &larr; Home
+          </Link>
+        </div>
+      </nav>
+    </div>
   );
 }
 
