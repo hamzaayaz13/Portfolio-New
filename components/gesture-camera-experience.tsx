@@ -60,6 +60,7 @@ type TrackedHand = {
   landmarks: Landmark[];
   gesture: GestureKey;
   point: Point;
+  velocity: Point;
   depth: number;
 };
 
@@ -447,30 +448,18 @@ function drawAndUpdateParticles(
 function spawnPurpleExplosion(particles: ScreenParticle[], point: Point, canvas: HTMLCanvasElement) {
   particles.length = 0;
 
-  for (let i = 0; i < 620; i += 1) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 2 + Math.random() * 12;
-    particles.push({
-      x: point.x + (Math.random() - 0.5) * 28,
-      y: point.y + (Math.random() - 0.5) * 28,
-      vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 1.5,
-      vy: Math.sin(angle) * speed + (Math.random() - 0.5) * 1.5,
-      size: 2 + Math.random() * 5,
-      life: 0.9 + Math.random() * 0.1,
-      color: "purple",
-      absorbing: false,
-    });
-  }
+  const burstRadius = Math.min(canvas.width, canvas.height) * 0.05;
 
-  // A few particles start near the screen edges so the detonation feels full-frame.
   for (let i = 0; i < 220; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1.8 + Math.random() * 6.8;
     particles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 2.2,
-      vy: (Math.random() - 0.5) * 2.2,
-      size: 1.5 + Math.random() * 3.5,
-      life: 0.9,
+      x: point.x + (Math.random() - 0.5) * burstRadius,
+      y: point.y + (Math.random() - 0.5) * burstRadius,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: 1.8 + Math.random() * 3.8,
+      life: 0.82 + Math.random() * 0.18,
       color: "purple",
       absorbing: false,
     });
@@ -482,6 +471,7 @@ function drawScreenParticles(
   particles: ScreenParticle[],
   openPalmPoint: Point | null,
   canvas: HTMLCanvasElement,
+  hands: TrackedHand[],
   extraction?: { point: Point; color: EnergyColor } | null
 ) {
   ctx.save();
@@ -489,6 +479,19 @@ function drawScreenParticles(
 
   for (let i = particles.length - 1; i >= 0; i -= 1) {
     const particle = particles[i];
+
+    hands.forEach((hand) => {
+      const dx = particle.x - hand.point.x;
+      const dy = particle.y - hand.point.y;
+      const dist = Math.max(Math.hypot(dx, dy), 1);
+      const motionStrength = Math.min(Math.hypot(hand.velocity.x, hand.velocity.y), 42);
+
+      if (dist < 180) {
+        const sweepForce = (1 - dist / 180) * (0.18 + motionStrength * 0.05);
+        particle.vx += hand.velocity.x * 0.045 + (dx / dist) * sweepForce;
+        particle.vy += hand.velocity.y * 0.045 + (dy / dist) * sweepForce;
+      }
+    });
 
     if (openPalmPoint) {
       const dx = particle.x - openPalmPoint.x;
@@ -619,7 +622,7 @@ function drawOrbRitualScene(
         : null;
 
   if (screenParticles.length > 0) {
-    drawScreenParticles(ctx, screenParticles, openPalm?.point ?? null, canvas, extraction);
+    drawScreenParticles(ctx, screenParticles, openPalm?.point ?? null, canvas, hands, extraction);
   }
 
   if (ritual.phase === "exploded") {
@@ -737,6 +740,7 @@ export function GestureCameraExperience() {
 
   const [isRunning, setIsRunning] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isImmersiveOpen, setIsImmersiveOpen] = useState(false);
   const [ritualPhase, setRitualPhase] = useState<OrbPhase>("idle");
   const [ritualProgress, setRitualProgress] = useState(0);
 
@@ -813,11 +817,20 @@ export function GestureCameraExperience() {
   const stopCamera = useCallback(() => {
     disposeCameraResources();
     setIsRunning(false);
+    setIsImmersiveOpen(false);
     ritualPhaseRef.current = "idle";
     ritualProgressRef.current = 0;
     setRitualPhase("idle");
     setRitualProgress(0);
   }, [disposeCameraResources]);
+
+  const openImmersiveMode = useCallback(() => {
+    setIsImmersiveOpen(true);
+  }, []);
+
+  const closeImmersiveMode = useCallback(() => {
+    setIsImmersiveOpen(false);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -881,14 +894,26 @@ export function GestureCameraExperience() {
     if (lastDetectionAtRef.current === 0 || now - lastDetectionAtRef.current >= DETECTION_INTERVAL_MS) {
       const results = landmarker.detectForVideo(video, now);
       const detectedHands = (results.landmarks ?? []) as Landmark[][];
+      const previousHands = trackedHandsRef.current;
 
       trackedHandsRef.current = detectedHands
-        .map((handLandmarks) => ({
-          landmarks: handLandmarks,
-          gesture: detectGesture(handLandmarks),
-          point: toCanvasPoint(canvas, handLandmarks[8]),
-          depth: getFingerDepth(handLandmarks),
-        }))
+        .map((handLandmarks) => {
+          const point = toCanvasPoint(canvas, handLandmarks[8]);
+          const previousHand = findClosestHand(previousHands, point, 220);
+
+          return {
+            landmarks: handLandmarks,
+            gesture: detectGesture(handLandmarks),
+            point,
+            velocity: previousHand
+              ? {
+                  x: point.x - previousHand.point.x,
+                  y: point.y - previousHand.point.y,
+                }
+              : { x: 0, y: 0 },
+            depth: getFingerDepth(handLandmarks),
+          };
+        })
         .sort((a, b) => a.point.x - b.point.x);
 
       lastDetectionAtRef.current = now;
@@ -901,7 +926,7 @@ export function GestureCameraExperience() {
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (screenParticlesRef.current.length > 0) {
-          drawScreenParticles(ctx, screenParticlesRef.current, null, canvas);
+          drawScreenParticles(ctx, screenParticlesRef.current, null, canvas, []);
         }
       }
       scheduleNext();
@@ -1161,7 +1186,7 @@ export function GestureCameraExperience() {
 
   const powerBarTone = ritualPhase === "blue_charging" ? "blue" : "red";
   const powerBarPercent = Math.round(ritualProgress * 100);
-  const isWorldReleased = ritualPhase === "exploded";
+  const isWorldReleased = false;
 
   const phaseChipTop =
     isRunning && ritualPhase !== "idle" && showPowerBar
@@ -1176,16 +1201,250 @@ export function GestureCameraExperience() {
     maxHeight: 560,
     width: "100%",
   } as const;
+  const experienceContentStyle: CSSProperties = {
+    color: "#F5F7FF",
+    fontFamily: '"Space Grotesk", "Satoshi", "General Sans", Inter, system-ui, sans-serif',
+  };
+
+  const renderReferenceClip = (className: string) => (
+    <div className={className}>
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#02030A]/38 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 z-[2] border border-[#4DA3FF]/10" />
+      <span className="absolute left-2 top-2 z-[3] text-[7px] font-black uppercase tracking-[0.26em] text-[#9AA4C7]/70">
+        Ref
+      </span>
+      <video
+        className="aspect-video w-full object-cover opacity-95"
+        src="/personal-projects/new jojo.mov"
+        preload="metadata"
+        autoPlay
+        muted
+        loop
+        playsInline
+      />
+    </div>
+  );
+
+  const renderCameraFrame = (immersive: boolean) => (
+    <div className={`h-full w-full overflow-visible ${immersive ? "max-w-none" : "mx-auto max-w-[1120px]"}`}>
+      <div className={`relative flex w-full items-center justify-center overflow-visible ${immersive ? "h-full px-0" : "h-fit px-0 sm:px-10 lg:px-14"}`}>
+        <div
+          className={`limitless-chamber group relative isolate min-h-[300px] w-full overflow-hidden bg-[rgba(8,10,20,0.55)] backdrop-blur-[14px] transition-transform duration-500 ease-out will-change-transform ${
+            immersive ? "h-full rounded-none hover:scale-100" : "rounded-[20px] hover:scale-[1.006]"
+          }`}
+          style={{
+            ...(immersive
+              ? {
+                  height: "100svh",
+                  minHeight: "100svh",
+                  maxHeight: "100svh",
+                  width: "100vw",
+                }
+              : experienceFrameStyle),
+            boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.06), 0 0 46px rgba(77,163,255,0.08), 0 0 62px rgba(155,92,255,0.07)`,
+          }}
+        >
+          <div className="pointer-events-none absolute -inset-16 z-[3] bg-[radial-gradient(circle_at_12%_50%,rgba(77,163,255,0.08),transparent_36%),radial-gradient(circle_at_88%_46%,rgba(155,92,255,0.08),transparent_38%)]" />
+          <div className="pointer-events-none absolute inset-0 z-[4] bg-[radial-gradient(circle_at_50%_42%,transparent_0%,transparent_46%,rgba(77,163,255,0.045)_76%,rgba(155,92,255,0.045)_100%)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-[4] h-14 bg-gradient-to-b from-[#F5F7FF]/[0.032] to-transparent" />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-[4] opacity-[0.035]"
+            style={{
+              backgroundImage:
+                "linear-gradient(0deg, rgba(154,164,199,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(154,164,199,0.8) 1px, transparent 1px)",
+              backgroundSize: "42px 42px",
+            }}
+          />
+
+          {immersive && (
+            <button
+              type="button"
+              onClick={isRunning ? stopCamera : closeImmersiveMode}
+              className={`absolute right-3 z-[55] rounded-full border border-white/20 bg-black/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/85 backdrop-blur-md transition-colors hover:bg-black/90 ${
+                showPowerBar ? "top-[3.6rem]" : "top-3"
+              }`}
+            >
+              {isRunning ? "Close camera" : "Close"}
+            </button>
+          )}
+
+          <div className="absolute inset-0 min-h-0 w-full bg-neutral-950">
+            <video
+              ref={videoRef}
+              className="camera-feed-cinematic absolute inset-0 h-full w-full scale-x-[-1] object-cover"
+              muted
+              playsInline
+            />
+            <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+            <div aria-hidden className="film-grain pointer-events-none absolute inset-0 z-[2] opacity-[0.055]" />
+            <div aria-hidden className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_50%_45%,transparent_0%,transparent_58%,rgba(77,163,255,0.045)_100%)] mix-blend-screen" />
+
+            {showPowerBar && (
+              <div
+                className={`pointer-events-none absolute left-3 z-30 ${immersive ? "right-3 top-3 max-w-[320px]" : isRunning ? "right-[4.85rem] top-3 sm:right-[5.65rem]" : "right-3 top-3"}`}
+              >
+                <div className="mb-2 flex items-end justify-between gap-2">
+                  <span className="inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.22em] text-white/60">
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full shadow-[0_0_12px_currentColor] ${
+                        isLoading
+                          ? "bg-fuchsia-300 text-fuchsia-300"
+                          : powerBarTone === "red"
+                            ? "bg-rose-300 text-rose-300"
+                            : "bg-sky-300 text-sky-300"
+                      }`}
+                    />
+                    {powerBarLabel}
+                  </span>
+                  {!isLoading && (
+                    <span className="font-mono text-[10px] tabular-nums text-white/60">
+                      {powerBarPercent}%
+                    </span>
+                  )}
+                </div>
+                <div
+                  className="relative h-4 overflow-hidden rounded-sm border border-white/15 bg-black/75 shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
+                  style={{
+                    boxShadow: `0 0 22px rgba(${phaseGlow}, 0.16), 0 0 0 1px rgba(255,255,255,0.04) inset`,
+                  }}
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="absolute inset-0 bg-white/[0.04]" />
+                      <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-fuchsia-300 to-transparent opacity-95 animate-ritual-boot-sweep" />
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className={`absolute inset-y-0 left-0 w-full origin-left transition-transform duration-75 ease-linear ${
+                          powerBarTone === "red"
+                            ? "bg-gradient-to-r from-rose-700 via-rose-400 to-orange-300 shadow-[0_0_14px_rgba(239,68,68,0.65)]"
+                            : "bg-gradient-to-r from-sky-700 via-sky-400 to-cyan-200 shadow-[0_0_14px_rgba(56,189,248,0.65)]"
+                        }`}
+                        style={{ transform: `scaleX(${ritualProgress})` }}
+                      />
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 opacity-45"
+                        style={{
+                          backgroundImage:
+                            "linear-gradient(90deg, rgba(255,255,255,0.18) 0 1px, transparent 1px)",
+                          backgroundSize: "14.285% 100%",
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/14 to-transparent animate-ritual-cell-spark opacity-45" />
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {isRunning && ritualPhase !== "idle" && (
+              <div className={`pointer-events-none absolute left-3 z-20 sm:left-4 ${phaseChipTop}`}>
+                <span
+                  className={`rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] backdrop-blur-md sm:px-3 sm:py-1 sm:text-[10px] ${
+                    guide.tone === "red"
+                      ? "border-rose-500/35 bg-rose-950/65 text-rose-300"
+                      : guide.tone === "blue"
+                        ? "border-sky-500/35 bg-sky-950/65 text-sky-300"
+                        : guide.tone === "purple"
+                          ? "border-fuchsia-500/35 bg-fuchsia-950/65 text-fuchsia-300"
+                          : "border-white/10 bg-black/55 text-white/40"
+                  }`}
+                >
+                  {guide.eyebrow}
+                </span>
+              </div>
+            )}
+
+            {!isRunning && (
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#02030A]/72 !text-[#F5F7FF] text-[#F5F7FF] backdrop-blur-[2px]">
+                <div className="mb-5 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-[1rem] border border-[#9B5CFF]/30 bg-[rgba(10,12,28,0.72)] shadow-[0_0_34px_rgba(155,92,255,0.24)]">
+                  <Camera className="h-8 w-8 text-[#9AA4C7]" />
+                </div>
+                <h3 className="mb-2 text-lg font-black uppercase !text-[#F5F7FF] tracking-normal">Hollow Purple Move</h3>
+                <p className="mb-6 max-w-[360px] px-4 text-center text-[12px] leading-relaxed !text-[#9AA4C7]">
+                  Camera runs entirely in your browser. Hand tracking never leaves your device.
+                </p>
+                <button
+                  onClick={() => {
+                    openImmersiveMode();
+                    void startCamera();
+                  }}
+                  disabled={isLoading}
+                  className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#4DA3FF_0%,#9B5CFF_55%,#C86BFF_100%)] px-6 py-2.5 text-[13px] font-black text-[#F5F7FF] shadow-[0_14px_34px_rgba(155,92,255,0.32)] transition-transform duration-300 hover:scale-[1.025] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Camera className="h-4 w-4" />
+                  {isLoading ? "Starting…" : "Start camera"}
+                </button>
+              </div>
+            )}
+
+            <div className="pointer-events-none absolute bottom-2 left-1/2 z-[60] w-[calc(100%-0.85rem)] max-w-[760px] -translate-x-1/2 px-0.5 sm:bottom-3">
+              <div className="mx-auto flex items-stretch justify-center gap-1 overflow-x-auto rounded-[14px] border border-white/[0.06] bg-[rgba(15,18,30,0.45)] px-1.5 py-1 shadow-none backdrop-blur-[18px] sm:gap-1.5 sm:px-2 sm:py-1">
+                {RITUAL_STEPS_STATIC.map((step, i) => {
+                  const isStepActive = isRunning && i === activePillIndex;
+                  const isIdleHint = !isRunning && i === 0;
+                  return (
+                    <div
+                      key={step.label}
+                      className={`flex min-w-0 shrink-0 items-center gap-1.5 px-1 py-0.5 transition-all duration-300 ease-out sm:gap-2 sm:px-2 ${
+                        isStepActive
+                          ? "scale-[1.05]"
+                          : isIdleHint
+                            ? "opacity-80"
+                            : isRunning
+                              ? "opacity-35"
+                              : "opacity-55"
+                      }`}
+                    >
+                      <div
+                        className={`relative h-6 w-6 shrink-0 overflow-hidden rounded-full border sm:h-7 sm:w-7 ${
+                          isStepActive
+                            ? "border-[#C86BFF]/80 shadow-[0_0_16px_rgba(155,92,255,0.32)] ring-1 ring-[#4DA3FF]/25"
+                            : isIdleHint
+                              ? "border-[#F5F7FF]/22"
+                              : "border-[#F5F7FF]/10"
+                        }`}
+                      >
+                        {step.stickerSrc ? (
+                          <img
+                            src={step.stickerSrc}
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-cover"
+                            width={36}
+                            height={36}
+                            decoding="async"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-white/10">
+                            <Camera className="h-3.5 w-3.5 text-[#9AA4C7]" />
+                          </div>
+                        )}
+                      </div>
+                      <span className="max-w-[52px] truncate text-[7px] font-semibold leading-tight text-[#F5F7FF]/76 sm:max-w-[72px] sm:text-[9px]">
+                        {step.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {!immersive && renderReferenceClip("hologram-card pointer-events-none absolute -right-1 top-2 z-[70] w-[min(38vw,190px)] max-w-[190px] rotate-[6deg] overflow-hidden rounded-[0.85rem] border border-[#F5F7FF]/16 bg-[rgba(10,12,28,0.55)] shadow-[0_20px_54px_rgba(0,0,0,0.5)] backdrop-blur-md sm:-right-3 sm:-top-1 sm:max-w-[210px] sm:rotate-[5deg] lg:-right-2")}
+      </div>
+    </div>
+  );
 
   return (
     <div
       className={`gesture-camera-root relative h-svh w-full overflow-hidden text-[#F5F7FF] ${
         isWorldReleased ? "limitless-release" : ""
       }`}
-      style={{
-        color: "#F5F7FF",
-        fontFamily: '"Space Grotesk", "Satoshi", "General Sans", Inter, system-ui, sans-serif',
-      } as CSSProperties}
+      style={{ color: "#ffffff" }}
     >
       <div
         aria-hidden
@@ -1193,8 +1452,8 @@ export function GestureCameraExperience() {
         style={{ backgroundImage: "url(/Images/wp9267744-stars-4k-dark-wallpapers.jpg)" }}
       />
 
-      <div className="relative z-10 mx-auto flex h-full w-full max-w-[1240px] flex-col px-4 pb-3 pt-[6.2rem] sm:px-6 sm:pb-4 md:pt-[6.35rem]">
-        <section className="relative z-10 h-[129px] shrink-0 text-center">
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-[1240px] flex-col px-4 pb-3 pt-[6.2rem] sm:px-6 sm:pb-4 md:pt-[6.35rem]" style={experienceContentStyle}>
+          <section className="relative z-10 h-[129px] shrink-0 text-center">
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-44 w-[min(70vw,680px)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(77,163,255,0.12),rgba(155,92,255,0.08)_42%,transparent_72%)] blur-[120px] opacity-[0.17]" />
           <div className="relative mx-auto max-w-[920px]">
             <div className="mb-1.5 flex items-center justify-center gap-3 text-[9px] font-black uppercase leading-none tracking-[0.34em] text-[#9AA4C7]">
@@ -1204,12 +1463,12 @@ export function GestureCameraExperience() {
               <span className="h-px w-9 bg-gradient-to-r from-[#9B5CFF] via-[#4DA3FF] to-transparent" />
             </div>
             <h1
-              aria-label="Turning Anime Into Interaction"
+              aria-label="Turning Anime Into UX"
               className="limitless-heading text-balance text-[48px] font-extrabold uppercase !leading-[0.9] tracking-[-0.05em] !text-[#F5F7FF]"
             >
               Turning Anime Into{" "}
               <span className="inline-block bg-[linear-gradient(135deg,#4DA3FF_0%,#9B5CFF_100%)] bg-clip-text text-transparent">
-                Interaction
+                UX
               </span>
             </h1>
             <p className="mx-auto mt-2 max-w-[660px] text-[16px] leading-5 !text-[#9AA4C7]">
@@ -1217,227 +1476,28 @@ export function GestureCameraExperience() {
             </p>
           </div>
           <div aria-hidden className="pointer-events-none mx-auto mt-2 h-[54px] w-px bg-gradient-to-b from-[#4DA3FF]/[0.09] via-[#9B5CFF]/[0.07] to-transparent" />
+          </section>
+
+        <section
+          className="relative z-20 mt-3 min-h-0 flex-1 overflow-visible"
+          aria-label="Camera experience"
+        >
+          {!isImmersiveOpen && renderCameraFrame(false)}
         </section>
 
-        <section className="relative z-20 mt-3 min-h-0 flex-1 overflow-visible" aria-label="Camera experience">
-        <div className="mx-auto h-full w-full max-w-[1120px] overflow-visible">
-          <div className="relative flex h-fit w-full items-center justify-center overflow-visible px-0 sm:px-10 lg:px-14">
-            <div
-              className="limitless-chamber group relative isolate min-h-[300px] w-full overflow-hidden rounded-[20px] bg-[rgba(8,10,20,0.55)] backdrop-blur-[14px] transition-transform duration-500 ease-out will-change-transform hover:scale-[1.006]"
-              style={{
-                ...experienceFrameStyle,
-                boxShadow: `inset 0 0 0 1px rgba(255,255,255,0.06), 0 0 46px rgba(77,163,255,0.08), 0 0 62px rgba(155,92,255,0.07)`,
-              }}
-            >
-            <div className="pointer-events-none absolute -inset-16 z-[3] bg-[radial-gradient(circle_at_12%_50%,rgba(77,163,255,0.08),transparent_36%),radial-gradient(circle_at_88%_46%,rgba(155,92,255,0.08),transparent_38%)]" />
-            <div className="pointer-events-none absolute inset-0 z-[4] bg-[radial-gradient(circle_at_50%_42%,transparent_0%,transparent_46%,rgba(77,163,255,0.045)_76%,rgba(155,92,255,0.045)_100%)]" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-[4] h-14 bg-gradient-to-b from-[#F5F7FF]/[0.032] to-transparent" />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 z-[4] opacity-[0.035]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(0deg, rgba(154,164,199,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(154,164,199,0.8) 1px, transparent 1px)",
-                backgroundSize: "42px 42px",
-              }}
+        {isImmersiveOpen && (
+          <div className="fixed inset-0 z-[140]">
+            <button
+              type="button"
+              aria-label="Close immersive camera"
+              onClick={isRunning ? stopCamera : closeImmersiveMode}
+              className="absolute inset-0 cursor-default bg-[#02030A]/92 backdrop-blur-[10px]"
             />
-
-            {isRunning && (
-              <button
-                type="button"
-                onClick={stopCamera}
-                className={`absolute right-3 z-[55] rounded-full border border-white/20 bg-black/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/85 backdrop-blur-md transition-colors hover:bg-black/90 ${
-                  showPowerBar ? "top-[3.6rem]" : "top-3"
-                }`}
-              >
-                Stop
-              </button>
-            )}
-
-            <div className="absolute inset-0 min-h-0 w-full bg-neutral-950">
-              <video
-                ref={videoRef}
-                className="camera-feed-cinematic absolute inset-0 h-full w-full scale-x-[-1] object-cover"
-                muted
-                playsInline
-              />
-              <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-              <div aria-hidden className="film-grain pointer-events-none absolute inset-0 z-[2] opacity-[0.055]" />
-              <div aria-hidden className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_50%_45%,transparent_0%,transparent_58%,rgba(77,163,255,0.045)_100%)] mix-blend-screen" />
-
-              {/* Game-style power bar — boot + red/blue charge */}
-              {showPowerBar && (
-                <div
-                  className={`pointer-events-none absolute left-3 top-3 z-30 ${isRunning ? "right-[4.85rem] sm:right-[5.65rem]" : "right-3"}`}
-                >
-                  <div className="mb-2 flex items-end justify-between gap-2">
-                    <span className="inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.22em] text-white/60">
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full shadow-[0_0_12px_currentColor] ${
-                          isLoading
-                            ? "bg-fuchsia-300 text-fuchsia-300"
-                            : powerBarTone === "red"
-                              ? "bg-rose-300 text-rose-300"
-                              : "bg-sky-300 text-sky-300"
-                        }`}
-                      />
-                      {powerBarLabel}
-                    </span>
-                    {!isLoading && (
-                      <span className="font-mono text-[10px] tabular-nums text-white/60">
-                        {powerBarPercent}%
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    className="relative h-4 overflow-hidden rounded-sm border border-white/15 bg-black/75 shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
-                    style={{
-                      boxShadow: `0 0 22px rgba(${phaseGlow}, 0.16), 0 0 0 1px rgba(255,255,255,0.04) inset`,
-                    }}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="absolute inset-0 bg-white/[0.04]" />
-                        <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-fuchsia-300 to-transparent opacity-95 animate-ritual-boot-sweep" />
-                      </>
-                    ) : (
-                      <>
-                        <div
-                          className={`absolute inset-y-0 left-0 w-full origin-left transition-transform duration-75 ease-linear ${
-                            powerBarTone === "red"
-                              ? "bg-gradient-to-r from-rose-700 via-rose-400 to-orange-300 shadow-[0_0_14px_rgba(239,68,68,0.65)]"
-                              : "bg-gradient-to-r from-sky-700 via-sky-400 to-cyan-200 shadow-[0_0_14px_rgba(56,189,248,0.65)]"
-                          }`}
-                          style={{ transform: `scaleX(${ritualProgress})` }}
-                        />
-                        <div
-                          aria-hidden
-                          className="absolute inset-0 opacity-45"
-                          style={{
-                            backgroundImage:
-                              "linear-gradient(90deg, rgba(255,255,255,0.18) 0 1px, transparent 1px)",
-                            backgroundSize: "14.285% 100%",
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/14 to-transparent animate-ritual-cell-spark opacity-45" />
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {isRunning && ritualPhase !== "idle" && (
-                <div className={`pointer-events-none absolute left-3 z-20 sm:left-4 ${phaseChipTop}`}>
-                  <span
-                    className={`rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] backdrop-blur-md sm:px-3 sm:py-1 sm:text-[10px] ${
-                      guide.tone === "red"
-                        ? "border-rose-500/35 bg-rose-950/65 text-rose-300"
-                        : guide.tone === "blue"
-                          ? "border-sky-500/35 bg-sky-950/65 text-sky-300"
-                          : guide.tone === "purple"
-                            ? "border-fuchsia-500/35 bg-fuchsia-950/65 text-fuchsia-300"
-                            : "border-white/10 bg-black/55 text-white/40"
-                    }`}
-                  >
-                    {guide.eyebrow}
-                  </span>
-                </div>
-              )}
-
-              {!isRunning && (
-                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#02030A]/72 !text-[#F5F7FF] text-[#F5F7FF] backdrop-blur-[2px]">
-                  <div className="mb-5 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-[1rem] border border-[#9B5CFF]/30 bg-[rgba(10,12,28,0.72)] shadow-[0_0_34px_rgba(155,92,255,0.24)]">
-                    <Camera className="h-8 w-8 text-[#9AA4C7]" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-black uppercase !text-[#F5F7FF] tracking-normal">Hollow Purple Move</h3>
-                  <p className="mb-6 max-w-[360px] px-4 text-center text-[12px] leading-relaxed !text-[#9AA4C7]">
-                    Camera runs entirely in your browser. Hand tracking never leaves your device.
-                  </p>
-                  <button
-                    onClick={startCamera}
-                    disabled={isLoading}
-                    className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#4DA3FF_0%,#9B5CFF_55%,#C86BFF_100%)] px-6 py-2.5 text-[13px] font-black text-[#F5F7FF] shadow-[0_14px_34px_rgba(155,92,255,0.32)] transition-transform duration-300 hover:scale-[1.025] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Camera className="h-4 w-4" />
-                    {isLoading ? "Starting…" : "Start camera"}
-                  </button>
-                </div>
-              )}
-
-              {/* Combined ritual strip — always visible; sits above idle overlay */}
-              <div className="pointer-events-none absolute bottom-2 left-1/2 z-[60] w-[calc(100%-0.85rem)] max-w-[760px] -translate-x-1/2 px-0.5 sm:bottom-3">
-                <div className="mx-auto flex items-stretch justify-center gap-1 overflow-x-auto rounded-[14px] border border-white/[0.06] bg-[rgba(15,18,30,0.45)] px-1.5 py-1 shadow-none backdrop-blur-[18px] sm:gap-1.5 sm:px-2 sm:py-1">
-                  {RITUAL_STEPS_STATIC.map((step, i) => {
-                    const isStepActive = isRunning && i === activePillIndex;
-                    const isIdleHint = !isRunning && i === 0;
-                    return (
-                      <div
-                        key={step.label}
-                        className={`flex min-w-0 shrink-0 items-center gap-1.5 px-1 py-0.5 transition-all duration-300 ease-out sm:gap-2 sm:px-2 ${
-                          isStepActive
-                            ? "scale-[1.05]"
-                            : isIdleHint
-                              ? "opacity-80"
-                              : isRunning
-                                ? "opacity-35"
-                                : "opacity-55"
-                        }`}
-                      >
-                        <div
-                          className={`relative h-6 w-6 shrink-0 overflow-hidden rounded-full border sm:h-7 sm:w-7 ${
-                            isStepActive
-                              ? "border-[#C86BFF]/80 shadow-[0_0_16px_rgba(155,92,255,0.32)] ring-1 ring-[#4DA3FF]/25"
-                              : isIdleHint
-                                ? "border-[#F5F7FF]/22"
-                                : "border-[#F5F7FF]/10"
-                          }`}
-                        >
-                          {step.stickerSrc ? (
-                            <img
-                              src={step.stickerSrc}
-                              alt=""
-                              className="absolute inset-0 h-full w-full object-cover"
-                              width={36}
-                              height={36}
-                              decoding="async"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-white/10">
-                              <Camera className="h-3.5 w-3.5 text-[#9AA4C7]" />
-                            </div>
-                          )}
-                        </div>
-                        <span className="max-w-[52px] truncate text-[7px] font-semibold leading-tight text-[#F5F7FF]/76 sm:max-w-[72px] sm:text-[9px]">
-                          {step.label}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+            <div className="relative h-full w-full">
+              {renderCameraFrame(true)}
             </div>
           </div>
-
-            {/* Reference clip — small titled rectangle; outside frame clip, straddles top-right corner */}
-            <div className="hologram-card pointer-events-none absolute -right-1 top-2 z-[70] w-[min(38vw,190px)] max-w-[190px] rotate-[6deg] overflow-hidden rounded-[0.85rem] border border-[#F5F7FF]/16 bg-[rgba(10,12,28,0.55)] shadow-[0_20px_54px_rgba(0,0,0,0.5)] backdrop-blur-md sm:-right-3 sm:-top-1 sm:max-w-[210px] sm:rotate-[5deg] lg:-right-2">
-              <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#02030A]/38 to-transparent" />
-              <div className="pointer-events-none absolute inset-0 z-[2] border border-[#4DA3FF]/10" />
-              <span className="absolute left-2 top-2 z-[3] text-[7px] font-black uppercase tracking-[0.26em] text-[#9AA4C7]/70">
-                Ref
-              </span>
-              <video
-                className="aspect-video w-full object-cover opacity-95"
-                src="/Images/hollow-purple-reference.mov"
-                preload="none"
-                autoPlay
-                muted
-                loop
-                playsInline
-              />
-            </div>
-          </div>
-        </div>
-        </section>
+        )}
       </div>
     </div>
   );
