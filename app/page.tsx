@@ -612,6 +612,24 @@ export default function Page() {
   });
 
   useEffect(() => {
+    const warmExpandedGallery = () => {
+      void import("@/components/home/expanded-work-gallery");
+    };
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(warmExpandedGallery, { timeout: 1800 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = globalThis.setTimeout(warmExpandedGallery, 1200);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, []);
+
+  useEffect(() => {
     if (!showIntro) return;
     const timer = window.setTimeout(() => {
       setShowIntro(false);
@@ -1050,7 +1068,9 @@ export default function Page() {
                       muted
                       loop
                       playsInline
-                      preload="none"
+                      preload="metadata"
+                      rootMargin="420px 0px"
+                      visibilityThreshold={0.05}
                       aria-hidden
                     />
                   ) : null}

@@ -448,18 +448,37 @@ function drawAndUpdateParticles(
 function spawnPurpleExplosion(particles: ScreenParticle[], point: Point, canvas: HTMLCanvasElement) {
   particles.length = 0;
 
-  const burstRadius = Math.min(canvas.width, canvas.height) * 0.05;
+  const viewportScale = Math.min(canvas.width, canvas.height);
+  const coreRadius = viewportScale * 0.06;
+  const ringRadius = viewportScale * 0.18;
 
-  for (let i = 0; i < 220; i += 1) {
+  for (let i = 0; i < 1400; i += 1) {
     const angle = Math.random() * Math.PI * 2;
-    const speed = 1.8 + Math.random() * 6.8;
+    const radius = Math.random() * coreRadius;
+    const speed = 2.2 + Math.random() * 6.4;
     particles.push({
-      x: point.x + (Math.random() - 0.5) * burstRadius,
-      y: point.y + (Math.random() - 0.5) * burstRadius,
+      x: point.x + Math.cos(angle) * radius,
+      y: point.y + Math.sin(angle) * radius,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      size: 1.8 + Math.random() * 3.8,
-      life: 0.82 + Math.random() * 0.18,
+      size: 2.2 + Math.random() * 3.6,
+      life: 0.9 + Math.random() * 0.2,
+      color: "purple",
+      absorbing: false,
+    });
+  }
+
+  for (let i = 0; i < 1000; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = coreRadius + Math.random() * ringRadius;
+    const speed = 4.4 + Math.random() * 8.6;
+    particles.push({
+      x: point.x + Math.cos(angle) * radius,
+      y: point.y + Math.sin(angle) * radius,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: 1.4 + Math.random() * 2.8,
+      life: 0.84 + Math.random() * 0.16,
       color: "purple",
       absorbing: false,
     });

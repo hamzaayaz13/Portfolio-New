@@ -35,7 +35,9 @@ export function ExpandedWorkGallery({
                 muted
                 loop
                 playsInline
-                preload="none"
+                preload="metadata"
+                rootMargin="360px 0px"
+                visibilityThreshold={0.05}
                 aria-label={image.alt}
               />
             ) : (
