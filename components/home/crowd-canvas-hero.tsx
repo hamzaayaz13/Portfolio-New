@@ -17,7 +17,7 @@ const CrowdCanvas = ({
   src,
   rows = 15,
   cols = 7,
-  heroSrc = "/images/me.png",
+  heroSrc = "/Images/me.png",
   revealAfter = 7,
 }: CrowdCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -470,10 +470,10 @@ export const CrowdCanvasHero = () => {
       <HeroTextOverlay />
       <div className="absolute bottom-0 z-0 h-full w-screen">
         <CrowdCanvas
-          src="/images/peeps/all-peeps.png"
+          src="/Images/peeps/all-peeps.png"
           rows={15}
           cols={7}
-          heroSrc="/images/me.png"
+          heroSrc="/Images/me.png"
           revealAfter={2}
         />
       </div>
