@@ -88,7 +88,7 @@ export const FloatingNav = ({
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
-      className={`fixed inset-x-0 z-[99999] mx-auto flex w-fit flex-col items-end ${
+      className={`floating-nav-wrap fixed inset-x-0 z-[99999] mx-auto flex w-fit flex-col items-end ${
         isGestureCamera ? "top-6" : "top-[var(--space-s)]"
       }`}
     >

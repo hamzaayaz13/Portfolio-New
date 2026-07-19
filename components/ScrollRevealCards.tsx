@@ -25,7 +25,7 @@ const cards: CardConfig[] = [
   {
     id: "photo",
     label: "Location",
-    title: "Based in Dubai",
+    title: "Available worldwide",
     description: "Editorial photo card placeholder.",
   },
   {
@@ -154,7 +154,7 @@ function RevealedCardContent({
           style={{ opacity: contentOpacity, y: contentY }}
           className="absolute bottom-5 left-5 rounded-full border border-white/20 bg-white/12 px-4 py-2 text-[12px] font-medium text-white backdrop-blur-xl"
         >
-          Based in Dubai
+          Available worldwide
         </motion.div>
       </>
     );
@@ -330,7 +330,7 @@ function MobileContactCards() {
                   Product Designer at Dubizzle Group with experience across B2C, B2B, and enterprise SaaS. I focus on reducing friction and building experiences that earn trust.
                 </p>
                 <p className="body-text mb-[var(--space-l)] text-[15px]">
-                  Based in Dubai. Available for remote and on-site.
+                  Available for remote and on-site.
                 </p>
 
                 <div className="space-y-[var(--space-xs)]">

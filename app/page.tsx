@@ -15,6 +15,11 @@ const ExpandedWorkGallery = dynamic(
   { ssr: false }
 );
 
+const CrowdCanvasHero = dynamic(
+  () => import("@/components/home/crowd-canvas-hero").then((mod) => mod.CrowdCanvasHero),
+  { ssr: false }
+);
+
 let hasShownHomeIntroThisVisit = false;
 
 const AUDIENCES = [
@@ -52,6 +57,13 @@ const AUDIENCES = [
 
 const CASE_STUDIES = [
   {
+    id: "hatla2ee",
+    label: "App",
+    title: "A most-requested feature, rebuilt.",
+    href: "/case-studies/hatla2ee",
+    video: "/Video_2.mp4",
+  },
+  {
     id: "unduit",
     label: "Enterprise UX",
     title: "Guided setup that cuts support tickets.",
@@ -62,15 +74,8 @@ const CASE_STUDIES = [
     id: "carforce",
     label: "Mobile App",
     title: "Service booking made simple.",
-    href: "/case-studies/mobile-nav",
-    video: "/1102.mp4",
-  },
-  {
-    id: "coming1",
-    label: "Design Systems",
-    title: "Consistency at scale.",
     href: "#",
-    video: null,
+    video: "/1102.mp4",
   },
   {
     id: "coming2",
@@ -791,107 +796,9 @@ export default function Page() {
         {customCursor.label}
       </div>
 
-      {/* Intro overlay - stays in DOM, animates with CSS */}
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg)] transition-all duration-700"
-        style={{
-          opacity: showIntro ? 1 : 0,
-          transform: showIntro ? "translateY(0)" : "translateY(-30px)",
-          pointerEvents: showIntro ? "auto" : "none",
-          transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
-        }}
-      >
-        <h1 className="text-[28px] md:text-[36px] lg:text-[42px] font-semibold text-center">
-          Hello, my name is <span className="intro-name-gradient">Hamza</span>
-        </h1>
-      </div>
+      {/* Crowd canvas hero - shown first on landing */}
+      <CrowdCanvasHero />
 
-      {/* Hero section - appears as intro leaves */}
-      <section
-        className="min-h-[100svh] flex flex-col justify-center relative overflow-hidden"
-        onPointerMove={handleHeroPointerMove}
-        onPointerLeave={handleHeroPointerLeave}
-      >
-        <HeroDotField pointerRef={heroPointerRef} />
-        <div className="container-main relative z-10 py-12 md:py-20 flex flex-col items-stretch w-full min-w-0 text-left">
-          <p
-            className={`${showIntro ? "hero-reveal hero-reveal-1" : "hero-reveal-now"} text-[13px] text-[var(--muted-text)] uppercase tracking-[0.15em] mb-4 md:mb-8 text-left`}
-          >
-            Product Designer
-          </p>
-
-          <div
-            className={`${showIntro ? "hero-reveal hero-reveal-2" : "hero-reveal-now"} mb-5 md:mb-8 w-full min-w-0 overflow-x-auto overflow-y-hidden scrollbar-hide`}
-          >
-            <div className="inline-flex w-max flex-nowrap gap-x-1 whitespace-nowrap">
-              {AUDIENCES.map((audience, index) => (
-                <button
-                  key={audience.id}
-                  onClick={() => setActiveAudience(audience.id)}
-                  className="relative shrink-0 pl-[1px] pr-3 py-2 text-[14px] transition-colors duration-150 group"
-                >
-                  <span className={`transition-colors duration-150 ${
-                    activeAudience === audience.id
-                      ? "text-[var(--text)]"
-                      : "text-[var(--muted-text)] group-hover:text-[var(--text)]"
-                  }`}>
-                    {audience.label}
-                  </span>
-                  <span 
-                    className={`absolute bottom-0 left-[1px] right-3 h-[2px] bg-[var(--text)] transition-transform duration-200 origin-left ${
-                      activeAudience === audience.id ? "scale-x-100" : "scale-x-0"
-                    }`}
-                  />
-                  {index < AUDIENCES.length - 1 && (
-                    <span className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-[3px] rounded-full bg-[var(--subtle)]" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={`${showIntro ? "hero-reveal hero-reveal-3" : "hero-reveal-now"} w-full max-w-[880px]`}>
-            <h1 className="text-left text-[24px] md:text-[42px] lg:text-[52px] font-semibold leading-[1.2] md:leading-[1.15] tracking-[-0.02em]">
-              {activeAudienceContent.id === "engineers" ? (
-                <>
-                  I&apos;m{" "}
-                  <code className="font-mono whitespace-nowrap bg-[#1a1a1a] text-[#22c55e] px-2 py-1 rounded-md text-[0.85em] align-baseline">
-                    deeply_technical
-                  </code>{" "}
-                  — and while I&apos;m not an engineer, I understand the landscape well enough to{" "}
-                  <code className="font-mono whitespace-nowrap bg-[#1a1a1a] text-[#60a5fa] px-2 py-1 rounded-md text-[0.85em] align-baseline">
-                    collaborate()
-                  </code>{" "}
-                  and contribute meaningfully.
-                </>
-              ) : (
-                activeAudienceContent.heading
-              )}
-            </h1>
-          </div>
-
-          <div
-            className={`${showIntro ? "hero-reveal hero-reveal-4" : "hero-reveal-now"} mt-4 md:mt-10 w-full flex justify-start`}
-          >
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 text-left text-[15px] text-[var(--muted-text)] hover:text-[var(--text)] transition-colors shrink-0 whitespace-nowrap"
-            >
-              <span>Get in touch</span>
-              <span className="text-[var(--accent)]">→</span>
-            </Link>
-          </div>
-        </div>
-
-        <button
-          onClick={scrollToWork}
-          className={`${showIntro ? "hero-reveal hero-reveal-5" : "hero-reveal-now"} absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[var(--muted-text)] hover:text-[var(--text)] cursor-pointer`}
-          aria-label="Scroll to work"
-        >
-          <span className="text-[12px] uppercase tracking-widest">Work</span>
-          <ChevronDown className="w-5 h-5 animate-bounce" />
-        </button>
-      </section>
 
       <section id="work" className="section-gap scroll-mt-20">
         <div className="container-main">
@@ -975,16 +882,15 @@ export default function Page() {
                   )}
                   
                   {/* Platform chip — Desktop / App */}
-                  {(study.id === "unduit" || study.id === "carforce") && (
+                  {(study.id === "unduit" || study.id === "carforce" || study.id === "hatla2ee") && (
                     <div className="absolute top-5 left-5 flex items-center gap-2">
                       <span className="inline-flex w-fit items-center rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-md">
                         {study.id === "unduit" ? "Desktop" : "App"}
                       </span>
-                      {study.id === "carforce" && (
-                        <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#111] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-md">
-                          <span>In Progress</span>
-                          <span className="font-bold text-amber-600">75%</span>
-                        </div>
+                      {study.id === "hatla2ee" && (
+                        <span className="inline-flex w-fit items-center rounded-full border border-white/25 bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#111] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-md">
+                          New
+                        </span>
                       )}
                     </div>
                   )}
