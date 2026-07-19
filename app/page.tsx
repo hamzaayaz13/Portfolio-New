@@ -17,7 +17,10 @@ const ExpandedWorkGallery = dynamic(
 
 const CrowdCanvasHero = dynamic(
   () => import("@/components/home/crowd-canvas-hero").then((mod) => mod.CrowdCanvasHero),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => <div className="h-screen w-full bg-white" />,
+  }
 );
 
 let hasShownHomeIntroThisVisit = false;
