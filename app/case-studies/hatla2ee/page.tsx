@@ -115,7 +115,7 @@ const PRINCIPLES = [
     num: '01',
     title: "Removed What Didn't Matter",
     body: 'Only the information that helped users complete their task or benefited the business was kept. Everything else was removed.',
-    image: '/Images/Removed What Didnt Matter.png',
+    image: '/Images/Removed what didnt matter.png',
   },
   {
     num: '02',

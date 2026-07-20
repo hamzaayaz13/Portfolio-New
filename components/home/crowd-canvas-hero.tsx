@@ -465,17 +465,29 @@ const HeroTextOverlay = () => {
 };
 
 export const CrowdCanvasHero = () => {
+  const [showCrowd, setShowCrowd] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowCrowd(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <section className="relative h-screen w-full overflow-hidden bg-white text-black">
       <HeroTextOverlay />
-      <div className="absolute bottom-0 z-0 h-full w-screen">
-        <CrowdCanvas
-          src="/Images/peeps/all-peeps.png"
-          rows={15}
-          cols={7}
-          heroSrc="/Images/me.png"
-          revealAfter={2}
-        />
+      <div
+        className="absolute bottom-0 z-0 h-full w-screen transition-opacity duration-1000"
+        style={{ opacity: showCrowd ? 1 : 0 }}
+      >
+        {showCrowd && (
+          <CrowdCanvas
+            src="/Images/peeps/all-peeps.png"
+            rows={15}
+            cols={7}
+            heroSrc="/Images/me.png"
+            revealAfter={2}
+          />
+        )}
       </div>
     </section>
   );
