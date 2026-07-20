@@ -411,6 +411,7 @@ const LINE2 = "Hi, I'm Hamza. A Product Designer.";
 const LINE3 = "I design products that make sense\nfor users and the business.";
 const animDuration = (text: string) => text.length * 15 + 300;
 const HOLD = 3000;
+const FIRST_HOLD = 5000;
 
 type LineState = "1in" | "1out" | "2in" | "2out" | "3in";
 
@@ -418,11 +419,15 @@ const HeroTextOverlay = () => {
   const [state, setState] = useState<LineState>("1in");
 
   useEffect(() => {
+    const t1End = animDuration(LINE1) + FIRST_HOLD;
+    const t2Start = t1End + animDuration(LINE1);
+    const t2End = t2Start + animDuration(LINE2) + HOLD;
+    const t3Start = t2End + animDuration(LINE2);
     const schedule: [LineState, number][] = [
-      ["1out", animDuration(LINE1) + HOLD],
-      ["2in", animDuration(LINE1) + HOLD + animDuration(LINE1)],
-      ["2out", animDuration(LINE1) + HOLD + animDuration(LINE1) + animDuration(LINE2) + HOLD],
-      ["3in", animDuration(LINE1) + HOLD + animDuration(LINE1) + animDuration(LINE2) + HOLD + animDuration(LINE2)],
+      ["1out", t1End],
+      ["2in", t2Start],
+      ["2out", t2End],
+      ["3in", t3Start],
     ];
     const timers = schedule.map(([s, ms]) => setTimeout(() => setState(s), ms));
     return () => timers.forEach(clearTimeout);
@@ -465,29 +470,17 @@ const HeroTextOverlay = () => {
 };
 
 export const CrowdCanvasHero = () => {
-  const [showCrowd, setShowCrowd] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowCrowd(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <section className="relative h-screen w-full overflow-hidden bg-white text-black">
       <HeroTextOverlay />
-      <div
-        className="absolute bottom-0 z-0 h-full w-screen transition-opacity duration-1000"
-        style={{ opacity: showCrowd ? 1 : 0 }}
-      >
-        {showCrowd && (
-          <CrowdCanvas
-            src="/Images/peeps/all-peeps.png"
-            rows={15}
-            cols={7}
-            heroSrc="/Images/me.png"
-            revealAfter={2}
-          />
-        )}
+      <div className="absolute bottom-0 z-0 h-full w-screen">
+        <CrowdCanvas
+          src="/Images/peeps/all-peeps.png"
+          rows={15}
+          cols={7}
+          heroSrc="/Images/me.png"
+          revealAfter={2}
+        />
       </div>
     </section>
   );
