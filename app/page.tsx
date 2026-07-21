@@ -19,7 +19,15 @@ const CrowdCanvasHero = dynamic(
   () => import("@/components/home/crowd-canvas-hero").then((mod) => mod.CrowdCanvasHero),
   {
     ssr: false,
-    loading: () => <div className="h-screen w-full bg-white" />,
+    loading: () => (
+      <section className="relative h-screen w-full overflow-hidden bg-white text-black">
+        <div className="pointer-events-none absolute inset-x-0 top-[calc(18%+32px)] z-30 flex flex-col items-center text-center">
+          <p className="text-xl font-medium text-black/60 sm:text-3xl md:text-4xl px-4">
+            Sometimes the right designer is hiding in plain sight.
+          </p>
+        </div>
+      </section>
+    ),
   }
 );
 

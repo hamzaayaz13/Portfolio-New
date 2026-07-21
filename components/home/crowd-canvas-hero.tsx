@@ -411,7 +411,6 @@ const LINE2 = "Hi, I'm Hamza. A Product Designer.";
 const LINE3 = "I design products that make sense\nfor users and the business.";
 const animDuration = (text: string) => text.length * 15 + 300;
 const HOLD = 3000;
-const FIRST_HOLD = 5000;
 
 type LineState = "1in" | "1out" | "2in" | "2out" | "3in";
 
@@ -419,7 +418,7 @@ const HeroTextOverlay = () => {
   const [state, setState] = useState<LineState>("1in");
 
   useEffect(() => {
-    const t1End = animDuration(LINE1) + FIRST_HOLD;
+    const t1End = animDuration(LINE1) + HOLD;
     const t2Start = t1End + animDuration(LINE1);
     const t2End = t2Start + animDuration(LINE2) + HOLD;
     const t3Start = t2End + animDuration(LINE2);
