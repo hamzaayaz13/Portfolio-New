@@ -1234,7 +1234,7 @@ export function GestureCameraExperience() {
       </span>
       <video
         className="aspect-video w-full object-cover opacity-95"
-        src="/personal-projects/new jojo.mov"
+        src="/personal-projects/new-jojo.mp4"
         preload="metadata"
         autoPlay
         muted
