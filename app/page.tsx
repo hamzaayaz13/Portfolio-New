@@ -897,8 +897,8 @@ export default function Page() {
                         {study.id === "unduit" ? "Desktop" : "App"}
                       </span>
                       {study.id === "hatla2ee" && (
-                        <span className="inline-flex w-fit items-center rounded-full border border-white/25 bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#111] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-md">
-                          New
+                        <span className="new-badge-shine relative inline-flex w-fit items-center overflow-hidden rounded-full border border-white/30 bg-[#e5322b] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_8px_24px_rgba(229,50,43,0.45)]">
+                          <span className="relative z-10">New</span>
                         </span>
                       )}
                     </div>

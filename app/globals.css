@@ -352,6 +352,17 @@
     pointer-events: none;
   }
 
+  /* Same left-to-right sweep as the Cursor badge, in white for the red chip. */
+  .new-badge-shine::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    width: 45%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+    animation: cursor-badge-shine 2.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
   .cursor-hanging-tag {
     transform-origin: 50% -18px;
     animation: cursor-tag-swing 4.8s ease-in-out infinite;
