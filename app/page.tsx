@@ -101,7 +101,7 @@ const PERSONAL_PROJECTS = [
     cta: "View project",
     href: "/personal-projects/gesture-camera",
     visual: "from-[#10233f] via-[#143f63] to-[#0a0a0a]",
-    video: "/personal-projects/gesture-anime-experience.mov",
+    video: "/personal-projects/gesture-anime-experience.mp4",
   },
   {
     id: "portfolio-site",
@@ -425,7 +425,7 @@ const UNDUIT_WORK_MEDIA_BASE: WorkWallItem[] = [
     type: "Unduit Motion",
     metric: "Prototype motion from the Unduit product experience.",
     alt: "Unduit product motion video 1",
-    src: "/unduit-work/unduit-motion-01.mov",
+    src: "/unduit-work/unduit-motion-01.mp4",
     mediaType: "video",
   },
   {
@@ -434,7 +434,7 @@ const UNDUIT_WORK_MEDIA_BASE: WorkWallItem[] = [
     type: "Unduit Motion",
     metric: "Prototype motion from the Unduit product experience.",
     alt: "Unduit product motion video 2",
-    src: "/unduit-work/unduit-motion-02.mov",
+    src: "/unduit-work/unduit-motion-02.mp4",
     mediaType: "video",
   },
   {
@@ -443,7 +443,7 @@ const UNDUIT_WORK_MEDIA_BASE: WorkWallItem[] = [
     type: "Unduit Motion",
     metric: "Prototype motion from the Unduit product experience.",
     alt: "Unduit product motion video 3",
-    src: "/unduit-work/unduit-motion-03.mov",
+    src: "/unduit-work/unduit-motion-03.mp4",
     mediaType: "video",
   },
   {
@@ -800,6 +800,10 @@ export default function Page() {
       >
         {customCursor.label}
       </div>
+
+      {/* Starts the sprite download with the HTML instead of after the hero's
+          JS chunk hydrates — the hero stays blank until it arrives. */}
+      <link rel="preload" as="image" href="/Images/peeps/all-peeps.webp" />
 
       {/* Crowd canvas hero - shown first on landing */}
       <CrowdCanvasHero />
