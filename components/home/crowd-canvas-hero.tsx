@@ -1,7 +1,7 @@
 "use client";
 
 import { gsap } from "gsap";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { BlurTextEffect } from "@/components/ui/blur-text-effect";
 
 interface CrowdCanvasProps {
@@ -11,6 +11,8 @@ interface CrowdCanvasProps {
   heroSrc?: string;
   /** Seconds before the crowd starts parting (default 7) */
   revealAfter?: number;
+  /** Called once the crowd has loaded and painted its first frame */
+  onReady?: () => void;
 }
 
 const CrowdCanvas = ({
@@ -19,6 +21,7 @@ const CrowdCanvas = ({
   cols = 7,
   heroSrc = "/Images/me.png",
   revealAfter = 7,
+  onReady,
 }: CrowdCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -377,6 +380,9 @@ const CrowdCanvas = ({
         maybeResize();
         startTime = performance.now();
         gsap.ticker.add(render);
+        // Let the crowd paint one frame before signalling readiness so the
+        // hero text never appears ahead of the crowd being on screen.
+        requestAnimationFrame(() => onReady?.());
       });
     };
 
@@ -396,7 +402,7 @@ const CrowdCanvas = ({
         if (peep.walk) peep.walk.kill();
       });
     };
-  }, [src, rows, cols, heroSrc, revealAfter]);
+  }, [src, rows, cols, heroSrc, revealAfter, onReady]);
 
   return (
     <canvas
@@ -412,12 +418,14 @@ const LINE3 = "I design products that make sense\nfor users and the business.";
 const animDuration = (text: string) => text.length * 15 + 300;
 const HOLD = 3000;
 
-type LineState = "1in" | "1out" | "2in" | "2out" | "3in";
+type LineState = "0" | "1in" | "1out" | "2in" | "2out" | "3in";
 
-const HeroTextOverlay = () => {
-  const [state, setState] = useState<LineState>("1in");
+const HeroTextOverlay = ({ start }: { start: boolean }) => {
+  const [state, setState] = useState<LineState>("0");
 
   useEffect(() => {
+    if (!start) return;
+    setState("1in");
     const t1End = animDuration(LINE1) + HOLD;
     const t2Start = t1End + animDuration(LINE1);
     const t2End = t2Start + animDuration(LINE2) + HOLD;
@@ -430,7 +438,7 @@ const HeroTextOverlay = () => {
     ];
     const timers = schedule.map(([s, ms]) => setTimeout(() => setState(s), ms));
     return () => timers.forEach(clearTimeout);
-  }, []);
+  }, [start]);
 
   const show1 = state === "1in" || state === "1out";
   const show2 = state === "2in" || state === "2out";
@@ -469,9 +477,12 @@ const HeroTextOverlay = () => {
 };
 
 export const CrowdCanvasHero = () => {
+  const [crowdReady, setCrowdReady] = useState(false);
+  const handleCrowdReady = useCallback(() => setCrowdReady(true), []);
+
   return (
     <section className="relative h-screen w-full overflow-hidden bg-white text-black">
-      <HeroTextOverlay />
+      <HeroTextOverlay start={crowdReady} />
       <div className="absolute bottom-0 z-0 h-full w-screen">
         <CrowdCanvas
           src="/Images/peeps/all-peeps.png"
@@ -479,6 +490,7 @@ export const CrowdCanvasHero = () => {
           cols={7}
           heroSrc="/Images/me.png"
           revealAfter={2}
+          onReady={handleCrowdReady}
         />
       </div>
     </section>
