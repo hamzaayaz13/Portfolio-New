@@ -59,8 +59,21 @@ const CrowdCanvas = ({
     // faces instead of a crowd. Scale with the viewport so roughly the same
     // number of peeps span the screen at any width, reaching full size by
     // laptop width so desktop keeps its original sizing.
+    const MIN_SCALE = 0.675;
     let scale = 1;
-    const scaleForWidth = (w: number) => Math.min(1, Math.max(0.5, w / 1000));
+    const scaleFor = (w: number, h: number) => {
+      const byWidth = Math.min(1, Math.max(MIN_SCALE, w / 1000));
+      // Desktop keeps its original sizing untouched.
+      if (w >= 1024) return byWidth;
+      // A short screen has to shrink past the width floor, or the crowd fills
+      // it top to bottom and the heading has nowhere to sit.
+      return Math.min(byWidth, (0.55 * h) / 620);
+    };
+    // 0 at desktop, 1 once the layout has shrunk to the width floor or beyond.
+    const shrink = () => Math.min(1, (1 - scale) / (1 - MIN_SCALE));
+    // Narrow layouts sink the crowd a further 20% of a peep's height below the
+    // fold, so the bigger figures gain presence without eating the page.
+    const sink = () => 0.2 * 620 * shrink() * scale;
 
     // UTILS
     const randomRange = (min: number, max: number) =>
@@ -84,7 +97,8 @@ const CrowdCanvas = ({
         Math.sqrt(scale);
       // Feet at the canvas bottom (as before), just shifted down 80px so the
       // whole crowd sits a bit lower on the page.
-      const startY = stage.height - peep.height + 220 * scale + offsetY;
+      const startY =
+        stage.height - peep.height + 220 * scale + sink() + offsetY;
       let startX: number;
       let endX: number;
 
@@ -266,7 +280,7 @@ const CrowdCanvas = ({
       heroBox.x = stage.width / 2 - heroBox.width / 2;
       // 120 was the previous shoes+30%-legs clip; +80 shifts hero down with
       // the rest of the crowd.
-      heroBox.y = stage.height - heroBox.height + (120 + 220) * scale;
+      heroBox.y = stage.height - heroBox.height + (120 + 220) * scale + sink();
       state.centerX = stage.width / 2;
     };
 
@@ -362,7 +376,7 @@ const CrowdCanvas = ({
       availablePeeps.length = 0;
       availablePeeps.push(...allPeeps);
 
-      scale = scaleForWidth(stage.width);
+      scale = scaleFor(stage.width, stage.height);
       allPeeps.forEach((peep) => peep.setRect(peep.rect));
 
       layoutHero();
@@ -460,7 +474,7 @@ const HeroTextOverlay = ({ start }: { start: boolean }) => {
   const show2 = state === "2in" || state === "2out";
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[38%] z-30 flex flex-col items-center text-center sm:top-[34%] md:top-[28%] lg:top-[calc(18%+32px)]">
+    <div className="pointer-events-none absolute inset-x-0 top-[32%] z-30 flex flex-col items-center text-center sm:top-[34%] md:top-[28%] lg:top-[calc(18%+32px)]">
       {show1 && (
         <div className="flex w-full justify-center px-4">
           <BlurTextEffect
