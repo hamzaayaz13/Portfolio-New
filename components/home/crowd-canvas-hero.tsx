@@ -54,6 +54,14 @@ const CrowdCanvas = ({
 
     const REVEAL_STEPS = 6; // 100% -> 40% over 6 one-second steps
 
+    // A sprite cell is ~270px wide. Drawn unscaled that is a fifth of a
+    // desktop viewport but two thirds of a phone, which reads as a few huge
+    // faces instead of a crowd. Scale with the viewport so roughly the same
+    // number of peeps span the screen at any width, reaching full size by
+    // laptop width so desktop keeps its original sizing.
+    let scale = 1;
+    const scaleForWidth = (w: number) => Math.min(1, Math.max(0.5, w / 1000));
+
     // UTILS
     const randomRange = (min: number, max: number) =>
       min + Math.random() * (max - min);
@@ -68,10 +76,15 @@ const CrowdCanvas = ({
     // TWEEN FACTORIES
     const resetPeep = ({ stage, peep }: { stage: any; peep: any }) => {
       const direction = Math.random() > 0.5 ? 1 : -1;
-      const offsetY = 100 - 250 * gsap.parseEase("power2.in")(Math.random());
+      // Depth spread shrinks more slowly than the peeps themselves, so a
+      // narrow screen still gets a crowd with height to it rather than a
+      // single thin band sitting under a lot of empty white.
+      const offsetY =
+        (100 - 250 * gsap.parseEase("power2.in")(Math.random())) *
+        Math.sqrt(scale);
       // Feet at the canvas bottom (as before), just shifted down 80px so the
       // whole crowd sits a bit lower on the page.
-      const startY = stage.height - peep.height + 220 + offsetY;
+      const startY = stage.height - peep.height + 220 * scale + offsetY;
       let startX: number;
       let endX: number;
 
@@ -152,8 +165,8 @@ const CrowdCanvas = ({
         walk: null,
         setRect: (rect: number[]) => {
           peep.rect = rect;
-          peep.width = rect[2];
-          peep.height = rect[3];
+          peep.width = rect[2] * scale;
+          peep.height = rect[3] * scale;
           peep.drawArgs = [peep.image, ...rect, 0, 0, peep.width, peep.height];
         },
         render: (ctx: CanvasRenderingContext2D) => {
@@ -244,7 +257,7 @@ const CrowdCanvas = ({
       // Hero is 35% larger than before (was peepHeight+80, now scaled 1.35x).
       // Positioned so ~22% of him clips below the section (shoes + ~30% of
       // legs off-screen), keeping the same clipping ratio at the new size.
-      const targetHeight = peepHeight + 108; // 80 * 1.35 ≈ 108
+      const targetHeight = peepHeight + 108 * scale; // 80 * 1.35 ≈ 108
       const ratio = hero.naturalHeight
         ? hero.naturalWidth / hero.naturalHeight
         : 0.5;
@@ -253,7 +266,7 @@ const CrowdCanvas = ({
       heroBox.x = stage.width / 2 - heroBox.width / 2;
       // 120 was the previous shoes+30%-legs clip; +80 shifts hero down with
       // the rest of the crowd.
-      heroBox.y = stage.height - heroBox.height + 120 + 220;
+      heroBox.y = stage.height - heroBox.height + (120 + 220) * scale;
       state.centerX = stage.width / 2;
     };
 
@@ -348,6 +361,9 @@ const CrowdCanvas = ({
       crowd.length = 0;
       availablePeeps.length = 0;
       availablePeeps.push(...allPeeps);
+
+      scale = scaleForWidth(stage.width);
+      allPeeps.forEach((peep) => peep.setRect(peep.rect));
 
       layoutHero();
       initCrowd();
@@ -444,7 +460,7 @@ const HeroTextOverlay = ({ start }: { start: boolean }) => {
   const show2 = state === "2in" || state === "2out";
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[calc(18%+32px)] z-30 flex flex-col items-center text-center">
+    <div className="pointer-events-none absolute inset-x-0 top-[38%] z-30 flex flex-col items-center text-center sm:top-[34%] md:top-[28%] lg:top-[calc(18%+32px)]">
       {show1 && (
         <div className="flex w-full justify-center px-4">
           <BlurTextEffect
